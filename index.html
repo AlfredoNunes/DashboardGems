@@ -406,9 +406,9 @@
 
     .board-container {
       display: flex;
+      flex-wrap: wrap;
       gap: 20px;
       align-items: flex-start;
-      overflow-x: auto;
       padding-bottom: 20px;
     }
 
@@ -419,6 +419,13 @@
       border-radius: var(--radius-md);
       padding: 10px;
       border: 1px solid var(--border-subtle);
+      transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .board-column.collapsed {
+      width: 44px;
+      min-width: 44px;
+      padding: 10px 4px;
     }
 
     .board-column.is-new-column {
@@ -1054,10 +1061,15 @@
           if (!parsed.groups.some(g => g.id === 'new_gems')) {
             parsed.groups.unshift({ id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true });
           }
+          if (!parsed.collapsedGroups) {
+            parsed.collapsedGroups = {};
+          }
           return parsed;
         } catch (e) {}
       }
-      return defaultState;
+      const clonedDefault = JSON.parse(JSON.stringify(defaultState));
+      clonedDefault.collapsedGroups = {};
+      return clonedDefault;
     }
 
     function saveState() {
@@ -1166,33 +1178,54 @@
       columns.forEach(group => {
         const colGems = gems.filter(g => g.groupId === group.id);
         const isNewGroup = group.id === 'new_gems';
+        const isCollapsed = state.collapsedGroups && state.collapsedGroups[group.id];
 
         const colDOM = document.createElement('div');
-        colDOM.className = `board-column ${isNewGroup ? 'is-new-column' : ''}`;
-        colDOM.innerHTML = `
-          <div class="column-header">
-            <div class="column-title">
-              <i data-lucide="${group.icon || 'folder'}" style="width: 14px; ${isNewGroup ? 'color: var(--accent-new);' : ''}"></i>
-              <span>${escapeHTML(group.name)}</span>
+        if (isCollapsed) {
+          colDOM.className = `board-column collapsed ${isNewGroup ? 'is-new-column' : ''}`;
+          colDOM.innerHTML = `
+            <div class="column-header" style="flex-direction: column; align-items: center; gap: 12px; padding: 4px 0 10px;">
+              <button class="header-action-btn" onclick="toggleGroupCollapse('${group.id}')" title="Expandir Grupo" style="box-shadow: none;">
+                <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+              </button>
+              <div class="column-title-vertical" style="writing-mode: vertical-rl; text-orientation: mixed; font-weight: 600; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;" onclick="toggleGroupCollapse('${group.id}')">
+                <i data-lucide="${group.icon || 'folder'}" style="width: 14px; height: 14px; transform: rotate(-90deg); ${isNewGroup ? 'color: var(--accent-new);' : ''}"></i>
+                <span>${escapeHTML(group.name)}</span>
+              </div>
+              <span style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
             </div>
-            <div class="column-header-actions">
-              <span class="column-count" style="font-size: 11px; color: var(--text-tertiary);">${colGems.length}</span>
-              <div class="column-action-buttons">
-                <button class="header-action-btn" onclick="editGroup('${group.id}')" title="Editar Grupo">
-                  <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
+            <div class="column-cards" style="display: none;" data-group-id="${group.id}"></div>
+          `;
+        } else {
+          colDOM.className = `board-column ${isNewGroup ? 'is-new-column' : ''}`;
+          colDOM.innerHTML = `
+            <div class="column-header">
+              <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('${group.id}')">
+                <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="Colapsar Grupo">
+                  <i data-lucide="chevron-down" style="width: 13px; height: 13px;"></i>
                 </button>
-                ${!isNewGroup ? `
-                <button class="header-action-btn" onclick="deleteGroup('${group.id}')" title="Eliminar Grupo">
-                  <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
-                </button>` : ''}
+                <i data-lucide="${group.icon || 'folder'}" style="width: 14px; ${isNewGroup ? 'color: var(--accent-new);' : ''}"></i>
+                <span style="font-weight: 600;">${escapeHTML(group.name)}</span>
+              </div>
+              <div class="column-header-actions">
+                <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
+                <div class="column-action-buttons">
+                  <button class="header-action-btn" onclick="editGroup('${group.id}')" title="Editar Grupo">
+                    <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
+                  </button>
+                  ${!isNewGroup ? `
+                  <button class="header-action-btn" onclick="deleteGroup('${group.id}')" title="Eliminar Grupo">
+                    <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
+                  </button>` : ''}
+                </div>
               </div>
             </div>
-          </div>
-          <div class="column-cards" data-group-id="${group.id}">
-            ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
-            ${colGems.map(gem => createCardHTML(gem)).join('')}
-          </div>
-        `;
+            <div class="column-cards" data-group-id="${group.id}">
+              ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
+              ${colGems.map(gem => createCardHTML(gem)).join('')}
+            </div>
+          `;
+        }
         container.appendChild(colDOM);
       });
 
@@ -1650,10 +1683,20 @@
         if (state.currentCategory === groupId) {
           state.currentCategory = 'all';
         }
+        if (state.collapsedGroups && state.collapsedGroups[groupId]) {
+          delete state.collapsedGroups[groupId];
+        }
         saveState();
         renderApp();
         showToast('Grupo eliminado.');
       }
+    }
+
+    function toggleGroupCollapse(groupId) {
+      if (!state.collapsedGroups) state.collapsedGroups = {};
+      state.collapsedGroups[groupId] = !state.collapsedGroups[groupId];
+      saveState();
+      renderApp();
     }
 
     function saveGroup(e) {
