@@ -411,15 +411,12 @@
       align-items: flex-start;
       padding-bottom: 20px;
       width: 100%;
-      overflow: hidden; /* Prevent container overflow */
+      overflow: hidden; /* Pinned left, scrolling right container */
     }
 
     .board-left-pane {
       width: 280px;
       flex-shrink: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
     }
 
     .board-right-pane {
@@ -430,6 +427,22 @@
       align-items: flex-start;
       overflow-x: auto;
       padding-bottom: 12px;
+    }
+
+    .board-column-track {
+      width: 280px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      min-height: 500px;
+      border-radius: var(--radius-md);
+      transition: background 0.15s ease, outline 0.15s ease;
+    }
+
+    .board-column-track.drag-track-over {
+      background: var(--bg-hover);
+      outline: 1.5px dashed var(--accent);
     }
 
     /* Premium subtle scrollbar for the right pane */
@@ -1081,10 +1094,10 @@
       currentCategory: 'all',
       currentView: 'board',
       groups: [
-        { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true },
-        { id: 'coding', name: 'Programação & Tech', icon: 'code' },
-        { id: 'writing', name: 'Escrita & Redação', icon: 'pen-tool' },
-        { id: 'productivity', name: 'Produtividade & Análise', icon: 'zap' }
+        { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true, columnId: 0, position: 0 },
+        { id: 'coding', name: 'Programação & Tech', icon: 'code', columnId: 1, position: 0 },
+        { id: 'writing', name: 'Escrita & Redação', icon: 'pen-tool', columnId: 2, position: 0 },
+        { id: 'productivity', name: 'Produtividade & Análise', icon: 'zap', columnId: 3, position: 0 }
       ],
       gems: []
     };
@@ -1097,11 +1110,24 @@
         try {
           const parsed = JSON.parse(saved);
           if (!parsed.groups.some(g => g.id === 'new_gems')) {
-            parsed.groups.unshift({ id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true });
+            parsed.groups.unshift({ id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true, columnId: 0, position: 0 });
           }
           if (!parsed.collapsedGroups) {
             parsed.collapsedGroups = {};
           }
+          
+          // Migração: Garante que todos os grupos têm track e posição definidos
+          parsed.groups.forEach((g, idx) => {
+            if (g.columnId === undefined) {
+              if (g.id === 'new_gems') {
+                g.columnId = 0;
+                g.position = 0;
+              } else {
+                g.columnId = 1 + ((idx - 1) % 3); // Distribui por colunas 1, 2 e 3
+                g.position = Math.floor((idx - 1) / 3);
+              }
+            }
+          });
           return parsed;
         } catch (e) {}
       }
@@ -1215,7 +1241,7 @@
         leftPane.className = 'board-left-pane';
 
         // 1.1 Novos Gems Column
-        const newGroup = state.groups.find(g => g.id === 'new_gems') || { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true };
+        const newGroup = state.groups.find(g => g.id === 'new_gems') || { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true, columnId: 0, position: 0 };
         const newColGems = gems.filter(g => g.groupId === newGroup.id);
         const isCollapsedNew = state.collapsedGroups && state.collapsedGroups[newGroup.id];
 
@@ -1274,48 +1300,75 @@
         leftPane.appendChild(favColDOM);
         container.appendChild(leftPane);
 
-        // 2. Right Pane: Other Group columns arranged in flex-wrap row
+        // 2. Right Pane: 3 Column tracks (Column 1, 2, 3)
         const rightPane = document.createElement('div');
         rightPane.className = 'board-right-pane';
 
-        const otherGroups = state.groups.filter(g => g.id !== 'new_gems');
-        otherGroups.forEach(group => {
-          const colGems = gems.filter(g => g.groupId === group.id);
-          const isCollapsed = state.collapsedGroups && state.collapsedGroups[group.id];
+        for (let trackId = 1; trackId <= 3; trackId++) {
+          const trackDOM = document.createElement('div');
+          trackDOM.className = 'board-column-track';
+          trackDOM.setAttribute('data-track-id', trackId);
 
-          const colDOM = document.createElement('div');
-          colDOM.className = `board-column ${isCollapsed ? 'collapsed-vertical' : ''}`;
-          colDOM.setAttribute('draggable', 'true');
-          colDOM.setAttribute('data-column-group-id', group.id);
+          // Get groups belonging to this track, sorted by position
+          const trackGroups = state.groups.filter(g => g.id !== 'new_gems' && g.columnId === trackId);
+          trackGroups.sort((a, b) => (a.position || 0) - (b.position || 0));
 
-          colDOM.innerHTML = `
-            <div class="column-header" style="cursor: grab; display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsed ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsed ? '0' : '10px'};">
-              <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('${group.id}')">
-                <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="${isCollapsed ? 'Expandir Grupo' : 'Colapsar Grupo'}">
-                  <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 13px; height: 13px;"></i>
-                </button>
-                <i data-lucide="${group.icon || 'folder'}" style="width: 14px;"></i>
-                <span style="font-weight: 600;">${escapeHTML(group.name)}</span>
-              </div>
-              <div class="column-header-actions">
-                <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
-                <div class="column-action-buttons">
-                  <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${group.id}')" title="Editar Grupo">
-                    <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
+          trackGroups.forEach(group => {
+            const colGems = gems.filter(g => g.groupId === group.id);
+            const isCollapsed = state.collapsedGroups && state.collapsedGroups[group.id];
+
+            const colDOM = document.createElement('div');
+            colDOM.className = `board-column ${isCollapsed ? 'collapsed-vertical' : ''}`;
+            colDOM.setAttribute('draggable', 'true');
+            colDOM.setAttribute('data-column-group-id', group.id);
+
+            colDOM.innerHTML = `
+              <div class="column-header" style="cursor: grab; display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsed ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsed ? '0' : '10px'};">
+                <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('${group.id}')">
+                  <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="${isCollapsed ? 'Expandir Grupo' : 'Colapsar Grupo'}">
+                    <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 13px; height: 13px;"></i>
                   </button>
-                  <button class="header-action-btn" onclick="event.stopPropagation(); deleteGroup('${group.id}')" title="Eliminar Grupo">
-                    <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
-                  </button>
+                  <i data-lucide="${group.icon || 'folder'}" style="width: 14px;"></i>
+                  <span style="font-weight: 600;">${escapeHTML(group.name)}</span>
+                </div>
+                <div class="column-header-actions">
+                  <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
+                  <div class="column-action-buttons">
+                    <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${group.id}')" title="Editar Grupo">
+                      <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
+                    </button>
+                    <button class="header-action-btn" onclick="event.stopPropagation(); deleteGroup('${group.id}')" title="Eliminar Grupo">
+                      <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="column-cards" data-group-id="${group.id}" style="${isCollapsed ? 'display: none;' : ''}">
-              ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
-              ${colGems.map(gem => createCardHTML(gem)).join('')}
-            </div>
-          `;
-          rightPane.appendChild(colDOM);
-        });
+              <div class="column-cards" data-group-id="${group.id}" style="${isCollapsed ? 'display: none;' : ''}">
+                ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
+                ${colGems.map(gem => createCardHTML(gem)).join('')}
+              </div>
+            `;
+            trackDOM.appendChild(colDOM);
+          });
+
+          // Empty track placeholder for drag and drop
+          if (trackGroups.length === 0) {
+            const placeholder = document.createElement('div');
+            placeholder.style.flexGrow = '1';
+            placeholder.style.minHeight = '120px';
+            placeholder.style.display = 'flex';
+            placeholder.style.alignItems = 'center';
+            placeholder.style.justifyContent = 'center';
+            placeholder.style.color = 'var(--text-tertiary)';
+            placeholder.style.fontSize = '11px';
+            placeholder.style.border = '1px dashed var(--border-color)';
+            placeholder.style.borderRadius = 'var(--radius-md)';
+            placeholder.innerText = 'Arrasta um grupo para aqui';
+            trackDOM.appendChild(placeholder);
+          }
+
+          rightPane.appendChild(trackDOM);
+        }
         container.appendChild(rightPane);
 
       } else {
@@ -1716,10 +1769,9 @@
         });
       });
 
-      // Column Drag & Drop (Group Reordering)
+      // Column Drag & Drop (Group Reordering across tracks 1, 2, 3)
       columnsDOM.forEach(col => {
         const colId = col.dataset.columnGroupId;
-        // Disable column drag and reordering for the fixed left pane columns
         if (colId === 'new_gems' || colId === 'special_favorites') {
           col.setAttribute('draggable', 'false');
           const header = col.querySelector('.column-header');
@@ -1740,40 +1792,82 @@
           draggedColumnId = null;
           document.querySelectorAll('.board-column').forEach(c => c.classList.remove('drag-column-over'));
         });
+      });
 
-        col.addEventListener('dragover', (e) => {
+      // Track Dropzones
+      const tracks = document.querySelectorAll('.board-column-track');
+      tracks.forEach(track => {
+        const trackId = parseInt(track.dataset.trackId);
+
+        track.addEventListener('dragover', (e) => {
+          if (!draggedColumnId) return; // Only allow group drag
+          if (trackId === 0) return; // Column 0 is locked
           e.preventDefault();
-          // Only allow dragging columns over other custom columns (in the right pane)
-          if (draggedColumnId && draggedColumnId !== colId && colId !== 'new_gems' && colId !== 'special_favorites') {
-            col.classList.add('drag-column-over');
-          }
+          track.classList.add('drag-track-over');
         });
 
-        col.addEventListener('dragleave', () => {
-          col.classList.remove('drag-column-over');
+        track.addEventListener('dragleave', () => {
+          track.classList.remove('drag-track-over');
         });
 
-        col.addEventListener('drop', (e) => {
+        track.addEventListener('drop', (e) => {
+          if (!draggedColumnId) return;
           e.preventDefault();
-          col.classList.remove('drag-column-over');
+          track.classList.remove('drag-track-over');
 
-          const colIdDragged = e.dataTransfer.getData('text/column-id') || draggedColumnId;
-          const targetColId = colId;
+          if (trackId === 0) return;
 
-          if (colIdDragged && targetColId && colIdDragged !== targetColId && targetColId !== 'new_gems' && targetColId !== 'special_favorites') {
-            const fromIndex = state.groups.findIndex(g => g.id === colIdDragged);
-            const toIndex = state.groups.findIndex(g => g.id === targetColId);
-            if (fromIndex !== -1 && toIndex !== -1) {
-              const temp = state.groups[fromIndex];
-              state.groups.splice(fromIndex, 1);
-              state.groups.splice(toIndex, 0, temp);
-              saveState();
-              renderApp();
-              showToast('Grupo reordenado!');
-            }
+          const afterElement = getDragAfterElement(track, e.clientY);
+          const targetGroupId = afterElement ? afterElement.dataset.columnGroupId : null;
+
+          const group = state.groups.find(g => g.id === draggedColumnId);
+          if (!group) return;
+
+          // Remove group from its current order and collect other custom groups in the target track
+          const targetGroups = state.groups.filter(g => g.id !== 'new_gems' && g.columnId === trackId && g.id !== draggedColumnId);
+          
+          group.columnId = trackId;
+
+          if (targetGroupId) {
+            const idx = targetGroups.findIndex(g => g.id === targetGroupId);
+            targetGroups.splice(idx, 0, group);
+          } else {
+            targetGroups.push(group);
           }
+
+          // Re-index all position values for tracks
+          targetGroups.forEach((g, pos) => {
+            g.position = pos;
+          });
+
+          // Also clean index positions for other tracks
+          for (let t = 1; t <= 3; t++) {
+            if (t === trackId) continue;
+            const trackGroups = state.groups.filter(g => g.id !== 'new_gems' && g.columnId === t);
+            trackGroups.sort((a, b) => (a.position || 0) - (b.position || 0));
+            trackGroups.forEach((g, pos) => {
+              g.position = pos;
+            });
+          }
+
+          saveState();
+          renderApp();
+          showToast('Posição do grupo atualizada!');
         });
       });
+    }
+
+    function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll('.board-column:not(.dragging-column)')];
+      return draggableElements.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
     }
 
     // --- ACTIONS ---
