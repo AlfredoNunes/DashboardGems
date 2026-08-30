@@ -562,7 +562,7 @@
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       width: 100%;
-      max-width: 580px;
+      max-width: 600px;
       padding: 20px;
       box-shadow: var(--shadow-md);
     }
@@ -720,7 +720,7 @@
           <i data-lucide="search" style="width: 13px;"></i>
           <input type="text" id="searchInput" placeholder="Pesquisar Gems...">
         </div>
-        <button class="btn" onclick="openSyncModal()" title="Sincronizar Gems da conta Google">
+        <button class="btn" onclick="openSyncModal()" title="Importar/Sincronizar da conta Google">
           <i data-lucide="refresh-cw" style="width: 13px;"></i> Sincronizar Google
         </button>
         <button class="btn btn-primary" onclick="openGemModal()">
@@ -873,7 +873,7 @@
 
   <!-- MODAL: SYNC & GOOGLE FETCH -->
   <div class="modal-overlay" id="syncModal">
-    <div class="modal-box" style="max-width: 600px;">
+    <div class="modal-box">
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 8px;">
           <i data-lucide="refresh-cw" style="width: 18px; color: var(--accent);"></i>
@@ -882,38 +882,38 @@
         <button class="btn-icon" onclick="closeModal('syncModal')"><i data-lucide="x" style="width: 16px;"></i></button>
       </div>
 
-      <!-- DIRECT FETCH VIA EXTENSION -->
+      <!-- INSTANT TEXT PASTE PARSER (100% BULLETPROOF & FAST) -->
       <div style="background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px;">
-        <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-          <span>⚡ Método 1: Sincronização Direta em 1 Clique</span>
-          <span id="extensionBadge" style="font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 3px; background: #e0f2fe; color: #0284c7;">A verificar...</span>
-        </h4>
-        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
-          Busca os teus Gems diretamente da tua conta Google em segundo plano sem precisares de copiar nem colar nada!
+        <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 4px;">⚡ Método Ultra-Rápido: Importar por Texto (2 Segundos)</h4>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+          1. Abre a tua página <a href="https://gemini.google.com/gems/view" target="_blank" style="color: var(--accent); font-weight: 600;">gemini.google.com/gems/view</a><br>
+          2. Pressiona <code>Ctrl+A</code> (ou <code>Cmd+A</code>) para selecionar tudo e <code>Ctrl+C</code> para copiar.<br>
+          3. Cola o texto na caixa abaixo. O leitor deteta <strong>TODOS</strong> os teus Gems automaticamente!
         </p>
-        <div style="display: flex; gap: 8px;">
-          <button type="button" class="btn btn-primary" onclick="requestDirectExtensionFetch()" style="flex-grow: 1; justify-content: center;">
-            <i data-lucide="zap" style="width: 13px;"></i> Sincronizar Agora com a Conta Google
-          </button>
-        </div>
+        <textarea id="rawTextPasteInput" class="form-control" style="min-height: 100px;" placeholder="Cola aqui o texto copiado da tua página de Gems do Gemini (ex: IT teacher, Revisor Técnico, ImobiliarioMaster, GeoMaster, DaVinciResolve...)..." oninput="parsePastedTextInstant()"></textarea>
       </div>
 
-      <!-- EASY TEXT PASTE PARSER (100% RELIABLE) -->
+      <!-- EXTENSION FETCH -->
       <div style="background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px;">
-        <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 4px;">⚡ Método 2: Importação Instantânea por Texto (Ctrl+A -> Ctrl+C)</h4>
+        <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+          <span>🔌 Método 2: Sincronização por Extensão</span>
+          <span id="extensionBadge" style="font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 3px; background: var(--badge-bg); color: var(--text-secondary);">Opcional</span>
+        </h4>
         <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
-          Abre a página <a href="https://gemini.google.com/gems/view" target="_blank" style="color: var(--accent); font-weight: 500;">gemini.google.com/gems/view</a>, seleciona todo o texto (<code>Ctrl+A</code>) e cola-o na caixa abaixo. O nosso leitor extrai **TODOS** os teus Gems automaticamente!
+          Se tiveres a extensão do Dashboard instalada no Chrome, clica para sincronizar em segundo plano:
         </p>
-        <textarea id="rawTextPasteInput" class="form-control" style="min-height: 90px;" placeholder="Cola aqui o texto copiado da página de Gems do Gemini (ex: IT teacher, Revisor Técnico...)..." oninput="parsePastedTextInstant()"></textarea>
+        <button type="button" class="btn btn-primary" onclick="requestDirectExtensionFetch()" style="width: 100%; justify-content: center;">
+          <i data-lucide="zap" style="width: 13px;"></i> Sincronizar via Extensão
+        </button>
       </div>
 
       <!-- BOOKMARKLET FALLBACK -->
       <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px;">
         <details>
-          <summary style="font-size: 12px; color: var(--text-tertiary); cursor: pointer; font-weight: 500;">Ver Método 3: Bookmarklet / Favorito de Navegador</summary>
+          <summary style="font-size: 12px; color: var(--text-tertiary); cursor: pointer; font-weight: 500;">Método 3: Favorito de Navegador (Bookmarklet)</summary>
           <div style="padding-top: 8px;">
             <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
-              Arrasta o botão para os teus favoritos do browser e clica nele quando estiveres em <code>gemini.google.com/gems/view</code>.
+              Arrasta o botão para os teus favoritos do browser e clica nele quando estiveres na página do Gemini.
             </p>
             <div style="text-align: center;">
               <a id="bookmarkletLink" class="btn" style="text-decoration: none;" href="#">✨ Sincronizar Gems</a>
@@ -1209,37 +1209,49 @@
     // --- INSTANT TEXT PARSER (PASTE COPIED GEMINI PAGE TEXT) ---
     function parsePastedTextInstant() {
       const text = document.getElementById('rawTextPasteInput').value;
-      if (!text || text.length < 10) return;
+      if (!text || text.length < 5) return;
 
       const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
       const gems = [];
+      const seen = new Set();
       
+      const blacklist = [
+        'gemini', 'gems', 'my gems', 'premade gems', 'show more', 'new gem', 'activity', 
+        'new chat', 'search chats', 'images', 'videos', 'library', 'recent', 'notebooks',
+        'new notebook', 'share', 'edit', 'delete', 'more_vert', 'torres vedras, portugal',
+        'based on your places (home)', 'update location', 'leia mais', 'projects', 'board'
+      ];
+
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
-        
-        // Skip generic header UI lines
-        if (['gemini', 'gems', 'my gems', 'premade gems', 'show more', 'new gem', 'activity', 'new chat', 'search chats', 'images', 'videos', 'library', 'recent'].includes(line.toLowerCase())) {
+        const lowerLine = line.toLowerCase();
+
+        if (blacklist.includes(lowerLine) || lowerLine.startsWith('http') || line.length < 2) {
           continue;
         }
 
-        // Look for title and description pairs in text
-        if (line.length >= 3 && !line.includes('http') && !line.includes('©')) {
-          const nextLine = lines[i + 1] || '';
-          const isNextDesc = nextLine.length > 5 && !['share', 'edit', 'delete', 'more_vert'].includes(nextLine.toLowerCase());
-          
+        if (!seen.has(lowerLine)) {
+          let desc = 'Sincronizado da conta Google Gemini';
+          const nextLine = lines[i + 1];
+          if (nextLine && nextLine.length > 4 && !blacklist.includes(nextLine.toLowerCase()) && !seen.has(nextLine.toLowerCase())) {
+            desc = nextLine;
+            i++;
+          }
+
+          seen.add(lowerLine);
           gems.push({
             name: line,
-            desc: isNextDesc ? nextLine : 'Importado do Gemini',
-            url: `https://gemini.google.com/app?gem_name=${encodeURIComponent(line)}`
+            desc: desc,
+            url: `https://gemini.google.com/app?gem_name=${encodeURIComponent(line)}`,
+            icon: getEmojiForTitle(line)
           });
-
-          if (isNextDesc) i++; // advance
         }
       }
 
       if (gems.length > 0) {
         mergeIncomingGems(gems);
-        showToast(`✨ ${gems.length} Gems extraídos do texto colado!`);
+        closeModal('syncModal');
+        showToast(`✨ ${gems.length} Gems extraídos com sucesso!`);
       }
     }
 
@@ -1248,13 +1260,64 @@
       window.postMessage({ type: 'REQUEST_GEMINI_DIRECT_FETCH' }, '*');
       showToast('A ligar à tua conta Google Gemini...');
 
-      // Fallback timer if extension is not installed
       setTimeout(() => {
         if (!isExtensionInstalled) {
           window.open('https://gemini.google.com/gems/view', '_blank');
-          showToast('A abrir gemini.google.com/gems/view... Seleciona todo o texto (Ctrl+A) e cola na caixa!');
+          showToast('Página do Gemini aberta! Pressiona Ctrl+A -> Ctrl+C e cola o texto na caixa.');
         }
       }, 1500);
+    }
+
+    function openSyncModal() {
+      const modal = document.getElementById('syncModal');
+      modal.classList.add('active');
+
+      // Auto-read clipboard if permitted
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        navigator.clipboard.readText().then(txt => {
+          if (txt && txt.length > 10 && (txt.toLowerCase().includes('gems') || txt.toLowerCase().includes('revisor') || txt.toLowerCase().includes('master'))) {
+            document.getElementById('rawTextPasteInput').value = txt;
+            parsePastedTextInstant();
+          }
+        }).catch(() => {});
+      }
+
+      const code = `javascript:(function(){
+        try {
+          const gems = [];
+          const seen = new Set();
+          function add(name, desc, url) {
+            if(!name || name.length < 2) return;
+            const clean = name.trim();
+            if(seen.has(clean.toLowerCase())) return;
+            seen.add(clean.toLowerCase());
+            gems.push({ name: clean, desc: (desc || '').trim(), url: url || 'https://gemini.google.com/app' });
+          }
+
+          const rows = document.querySelectorAll('div, li, article, section, [role="listitem"], [role="article"]');
+          rows.forEach(r => {
+            const txt = r.innerText || '';
+            const lines = txt.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
+            if(lines.length >= 2) {
+              const title = lines.find(l => l.length > 2 && !['share', 'edit', 'delete', 'more_vert', 'new gem', 'my gems', 'premade gems', 'show more'].includes(l.toLowerCase()));
+              const desc = lines.find(l => l !== title && l.length > 4) || '';
+              const link = r.querySelector('a[href]');
+              if(title) add(title, desc, link ? link.href : null);
+            }
+          });
+
+          if(gems.length > 0) {
+            const json = JSON.stringify(gems, null, 2);
+            navigator.clipboard.writeText(json);
+            try { localStorage.setItem('gemini_dashboard_shared_sync', json); } catch(e){}
+            alert('✨ ' + gems.length + ' Gems extraídos com sucesso!\\n\\nO JSON foi copiado.');
+          } else {
+            alert('Nenhum Gem encontrado na página. Selecione todo o texto (Ctrl+A) e cola no Dashboard!');
+          }
+        } catch(e) { alert('Erro: ' + e.message); }
+      })();`;
+      
+      document.getElementById('bookmarkletLink').href = code.replace(/\n\s+/g, '');
     }
 
     // Listen for extension & sync messages
@@ -1472,46 +1535,6 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
       }
     }
 
-    function openSyncModal() {
-      const code = `javascript:(function(){
-        try {
-          const gems = [];
-          const seen = new Set();
-          function add(name, desc, url) {
-            if(!name || name.length < 2) return;
-            const clean = name.trim();
-            if(seen.has(clean.toLowerCase())) return;
-            seen.add(clean.toLowerCase());
-            gems.push({ name: clean, desc: (desc || '').trim(), url: url || 'https://gemini.google.com/app' });
-          }
-
-          const rows = document.querySelectorAll('div, li, article, section, [role="listitem"], [role="article"]');
-          rows.forEach(r => {
-            const txt = r.innerText || '';
-            const lines = txt.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
-            if(lines.length >= 2) {
-              const title = lines.find(l => l.length > 2 && !['share', 'edit', 'delete', 'more_vert', 'new gem', 'my gems', 'premade gems', 'show more'].includes(l.toLowerCase()));
-              const desc = lines.find(l => l !== title && l.length > 4) || '';
-              const link = r.querySelector('a[href]');
-              if(title) add(title, desc, link ? link.href : null);
-            }
-          });
-
-          if(gems.length > 0) {
-            const json = JSON.stringify(gems, null, 2);
-            navigator.clipboard.writeText(json);
-            try { localStorage.setItem('gemini_dashboard_shared_sync', json); } catch(e){}
-            alert('✨ ' + gems.length + ' Gems extraídos com sucesso!\\n\\nO JSON foi copiado.');
-          } else {
-            alert('Nenhum Gem encontrado na página. Selecione todo o texto (Ctrl+A) e cola no Dashboard!');
-          }
-        } catch(e) { alert('Erro: ' + e.message); }
-      })();`;
-      
-      document.getElementById('bookmarkletLink').href = code.replace(/\n\s+/g, '');
-      document.getElementById('syncModal').classList.add('active');
-    }
-
     function closeModal(id) {
       document.getElementById(id).classList.remove('active');
     }
@@ -1536,7 +1559,7 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
     }
 
     function escapeHTML(str) {
-      return str ? str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)) : '';
+      return str ? str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;'>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)) : '';
     }
 
     document.getElementById('searchInput').addEventListener('input', renderApp);
