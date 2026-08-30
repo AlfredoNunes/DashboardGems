@@ -7,17 +7,13 @@
   <meta name="description" content="Espaço de trabalho Notion-style para organizar, criar e gerir os teus Gemini Gems.">
   <meta name="color-scheme" content="light dark">
   
-  <!-- Typography: Inter & Segoe UI/SF Pro feel -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
     :root {
-      /* Notion Light Palette */
       --bg-app: #fbfbfa;
       --bg-sidebar: #f7f7f5;
       --bg-card: #ffffff;
@@ -32,6 +28,8 @@
       
       --accent: #2eaadc;
       --accent-subtle: rgba(46, 170, 220, 0.1);
+      --accent-new: #f59e0b;
+      --accent-new-subtle: rgba(245, 158, 11, 0.12);
       
       --badge-bg: #f1f1ef;
       --shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.05);
@@ -43,7 +41,6 @@
     }
 
     [data-theme="dark"] {
-      /* Notion Dark Palette */
       --bg-app: #191919;
       --bg-sidebar: #202020;
       --bg-card: #252525;
@@ -58,6 +55,8 @@
       
       --accent: #529cca;
       --accent-subtle: rgba(82, 156, 202, 0.15);
+      --accent-new: #fbbf24;
+      --accent-new-subtle: rgba(251, 191, 36, 0.18);
       
       --badge-bg: #2f2f2f;
       --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -181,6 +180,16 @@
       color: var(--text-tertiary);
     }
 
+    .new-badge {
+      background: var(--accent-new);
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
     /* Main Area */
     .app-main {
       flex-grow: 1;
@@ -215,7 +224,6 @@
       gap: 8px;
     }
 
-    /* Search & Action Inputs */
     .search-box {
       position: relative;
       display: flex;
@@ -246,7 +254,6 @@
       pointer-events: none;
     }
 
-    /* Standard Notion Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -292,7 +299,6 @@
       color: var(--text-primary);
     }
 
-    /* Workspace Content Header */
     .content-header {
       padding: 24px 36px 12px;
     }
@@ -312,7 +318,6 @@
       font-size: 13px;
     }
 
-    /* View Controls Bar */
     .view-controls {
       padding: 0 36px;
       border-bottom: 1px solid var(--border-color);
@@ -353,14 +358,12 @@
       border-bottom-color: var(--text-primary);
     }
 
-    /* Main Scrollable View Area */
     .view-body {
       flex-grow: 1;
       padding: 20px 36px 40px;
       overflow-y: auto;
     }
 
-    /* Board View (Notion Columns) */
     .board-container {
       display: flex;
       gap: 20px;
@@ -376,6 +379,11 @@
       border-radius: var(--radius-md);
       padding: 10px;
       border: 1px solid var(--border-subtle);
+    }
+
+    .board-column.is-new-column {
+      background: var(--accent-new-subtle);
+      border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
     .column-header {
@@ -407,7 +415,6 @@
       border-radius: var(--radius-sm);
     }
 
-    /* Notion Card */
     .notion-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -491,7 +498,6 @@
       opacity: 1;
     }
 
-    /* List View (Notion Database Table) */
     .notion-table {
       width: 100%;
       border-collapse: collapse;
@@ -533,7 +539,6 @@
       color: var(--text-secondary);
     }
 
-    /* Clean Modal */
     .modal-overlay {
       position: fixed;
       inset: 0;
@@ -557,7 +562,7 @@
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       width: 100%;
-      max-width: 520px;
+      max-width: 540px;
       padding: 20px;
       box-shadow: var(--shadow-md);
     }
@@ -607,7 +612,6 @@
       min-height: 70px;
     }
 
-    /* Code Block Preview */
     .code-preview {
       background: var(--bg-sidebar);
       border: 1px solid var(--border-color);
@@ -621,7 +625,6 @@
       overflow-y: auto;
     }
 
-    /* Toast */
     .toast-container {
       position: fixed;
       bottom: 20px;
@@ -649,7 +652,7 @@
 <body>
 
   <!-- Sidebar -->
-  aside class="app-sidebar">
+  <aside class="app-sidebar">
     <div class="workspace-header">
       <div class="workspace-title">
         <div class="workspace-avatar">G</div>
@@ -677,6 +680,15 @@
         <span class="menu-item-count" id="countFavorites">0</span>
       </div>
 
+      <!-- Folder for NEW/UNORGANIZED GEMS -->
+      <div class="menu-item" onclick="switchCategory('new_gems')" style="border-left: 2px solid var(--accent-new);">
+        <div class="menu-item-left">
+          <i data-lucide="inbox" style="width: 15px; color: var(--accent-new);"></i>
+          <span style="font-weight: 600; color: var(--text-primary);">📥 Novos Gems</span>
+        </div>
+        <span class="menu-item-count" id="countNewGems">0</span>
+      </div>
+
       <div class="menu-group-label">
         <span>Grupos</span>
         <i data-lucide="plus" style="width: 12px; cursor: pointer;" onclick="openGroupModal()" title="Novo Grupo"></i>
@@ -696,7 +708,6 @@
 
   <!-- Main Content Area -->
   <main class="app-main">
-    <!-- Top Bar -->
     <div class="top-bar">
       <div class="breadcrumb">
         <span>Gemini Workspace</span>
@@ -709,8 +720,8 @@
           <i data-lucide="search" style="width: 13px;"></i>
           <input type="text" id="searchInput" placeholder="Pesquisar Gems...">
         </div>
-        <button class="btn" onclick="openSyncModal()">
-          <i data-lucide="refresh-cw" style="width: 13px;"></i> Importar
+        <button class="btn" onclick="triggerAutoSync()" title="Sincronizar com a conta Google">
+          <i data-lucide="refresh-cw" style="width: 13px;"></i> Sincronizar
         </button>
         <button class="btn btn-primary" onclick="openGemModal()">
           <i data-lucide="plus" style="width: 13px;"></i> Novo Gem
@@ -718,15 +729,13 @@
       </div>
     </div>
 
-    <!-- Content Header -->
     <div class="content-header">
       <h1 class="page-title" id="pageTitle">
         <span>💎</span> <span id="pageTitleText">Todos os Gems</span>
       </h1>
-      <p class="page-desc" id="pageDesc">Organização centralizada de instruções e atalhos para os teus Gemini Gems.</p>
+      <p class="page-desc" id="pageDesc">Gems organizados na tua conta Google Gemini. Novos Gems não organizados ficam na pasta "📥 Novos Gems".</p>
     </div>
 
-    <!-- View Controls / Tabs -->
     <div class="view-controls">
       <div class="view-tabs">
         <div class="view-tab active" id="tabBoard" onclick="switchView('board')">
@@ -738,9 +747,8 @@
       </div>
     </div>
 
-    <!-- View Body -->
     <div class="view-body" id="viewBody">
-      <!-- Dynamic Board or Table Content -->
+      <!-- Dynamic Content -->
     </div>
   </main>
 
@@ -772,7 +780,7 @@
           </select>
         </div>
         <div>
-          <label class="form-label">Grupo</label>
+          <label class="form-label">Grupo de Destino</label>
           <select id="aiGroupSelect" class="form-control"></select>
         </div>
       </div>
@@ -795,7 +803,7 @@
             <i data-lucide="external-link" style="width: 13px;"></i> Copiar & Abrir Gemini
           </button>
           <button class="btn btn-primary" style="flex-grow: 1; justify-content: center;" onclick="saveAiGemToDashboard()">
-            <i data-lucide="plus" style="width: 13px;"></i> Guardar no Workspace
+            <i data-lucide="plus" style="width: 13px;"></i> Guardar em "Novos Gems"
           </button>
         </div>
       </div>
@@ -816,7 +824,7 @@
           <input type="text" id="gemName" class="form-control" required placeholder="ex: Revisor Python">
         </div>
         <div class="form-group">
-          <label class="form-label">Link Direto (URL)</label>
+          <label class="form-label">Link Direto (URL do Gem)</label>
           <input type="url" id="gemUrl" class="form-control" required placeholder="https://gemini.google.com/app/gems/...">
         </div>
         <div class="form-group">
@@ -824,7 +832,7 @@
           <textarea id="gemDesc" class="form-control" placeholder="O que faz este Gem..."></textarea>
         </div>
         <div class="form-group">
-          <label class="form-label">Grupo</label>
+          <label class="form-label">Grupo / Pasta</label>
           <select id="gemGroup" class="form-control"></select>
         </div>
         <div class="form-group">
@@ -863,26 +871,36 @@
     </div>
   </div>
 
-  <!-- MODAL: SYNC BOOKMARKLET -->
+  <!-- MODAL: SYNC & AUTOMATION -->
   <div class="modal-overlay" id="syncModal">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width: 580px;">
       <div class="modal-header">
-        <h3 class="modal-title">Sincronizar Gems do Gemini</h3>
+        <h3 class="modal-title">Sincronização de Gems da Conta Google</h3>
         <button class="btn-icon" onclick="closeModal('syncModal')"><i data-lucide="x" style="width: 16px;"></i></button>
       </div>
+      
       <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
-        Arrasta o botão abaixo para a tua barra de favoritos do browser. Ao clicares nele na página do Gemini Gems, o script copia todos os teus Gems automaticamente!
+        Como a Google exige a tua sessão iniciada em <code>gemini.google.com</code>, a sincronização é feita automaticamente com 1 clique:
       </p>
-      <div style="text-align: center; margin-bottom: 16px;">
-        <a id="bookmarkletLink" class="btn btn-primary" style="text-decoration: none;" href="#">✨ Extrair Meus Gems</a>
+
+      <div style="background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px;">
+        <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">Método 1: Bookmarklet de Sincronização (Automático)</h4>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+          Arrasta o botão abaixo para a barra de favoritos do teu browser. Ao abrires <a href="https://gemini.google.com/gems/view" target="_blank" style="color: var(--accent);">gemini.google.com/gems/view</a> e clicares nele, os teus Gems são extraídos e enviados para aqui!
+        </p>
+        <div style="text-align: center;">
+          <a id="bookmarkletLink" class="btn btn-primary" style="text-decoration: none;" href="#">✨ Sincronizar Gems do Gemini</a>
+        </div>
       </div>
+
       <div class="form-group">
-        <label class="form-label">Colar JSON Extraído</label>
-        <textarea id="importJsonText" class="form-control" placeholder="Cola aqui o JSON copiado..."></textarea>
+        <label class="form-label">Método 2: Colar JSON de Gems</label>
+        <textarea id="importJsonText" class="form-control" placeholder="Cola aqui o JSON dos Gems..."></textarea>
       </div>
+
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
         <button type="button" class="btn" onclick="closeModal('syncModal')">Fechar</button>
-        <button type="button" class="btn btn-primary" onclick="importJsonData()">Importar</button>
+        <button type="button" class="btn btn-primary" onclick="importJsonData()">Importar & Sincronizar</button>
       </div>
     </div>
   </div>
@@ -897,6 +915,7 @@
       currentCategory: 'all',
       currentView: 'board',
       groups: [
+        { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true },
         { id: 'coding', name: 'Programação & Tech', icon: 'code' },
         { id: 'writing', name: 'Escrita & Redação', icon: 'pen-tool' },
         { id: 'productivity', name: 'Produtividade & Análise', icon: 'zap' }
@@ -937,7 +956,14 @@
     function loadState() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        try { return JSON.parse(saved); } catch (e) {}
+        try {
+          const parsed = JSON.parse(saved);
+          // Ensure new_gems group exists
+          if (!parsed.groups.some(g => g.id === 'new_gems')) {
+            parsed.groups.unshift({ id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true });
+          }
+          return parsed;
+        } catch (e) {}
       }
       return defaultState;
     }
@@ -947,13 +973,16 @@
     }
 
     function renderApp() {
-      // Sidebar Counts
+      // Counts
+      const newGemsCount = state.gems.filter(g => g.groupId === 'new_gems').length;
       document.getElementById('countAll').innerText = state.gems.length;
       document.getElementById('countFavorites').innerText = state.gems.filter(g => g.favorite).length;
+      document.getElementById('countNewGems').innerText = newGemsCount;
 
-      // Sidebar Groups
+      // Sidebar Groups (excluding new_gems from custom group section as it has dedicated tab)
+      const regularGroups = state.groups.filter(g => g.id !== 'new_gems');
       const sidebarGroupsList = document.getElementById('sidebarGroupsList');
-      sidebarGroupsList.innerHTML = state.groups.map(group => {
+      sidebarGroupsList.innerHTML = regularGroups.map(group => {
         const count = state.gems.filter(g => g.groupId === group.id).length;
         const isActive = state.currentCategory === group.id;
         return `
@@ -975,6 +1004,7 @@
       // Main Header Title
       let title = 'Todos os Gems';
       if (state.currentCategory === 'favorites') title = 'Favoritos';
+      else if (state.currentCategory === 'new_gems') title = '📥 Novos Gems (A Organizar)';
       else if (state.currentCategory !== 'all') {
         const grp = state.groups.find(g => g.id === state.currentCategory);
         if (grp) title = grp.name;
@@ -1009,23 +1039,28 @@
       const container = document.createElement('div');
       container.className = 'board-container';
 
-      // Group by column
-      const columns = state.currentCategory === 'all' ? state.groups : state.groups.filter(g => g.id === state.currentCategory || state.currentCategory === 'favorites');
+      // Determine which columns to show
+      let columns = state.groups;
+      if (state.currentCategory !== 'all') {
+        columns = state.groups.filter(g => g.id === state.currentCategory || (state.currentCategory === 'favorites' && gems.some(gem => gem.groupId === g.id)));
+      }
 
       columns.forEach(group => {
         const colGems = gems.filter(g => g.groupId === group.id);
+        const isNewGroup = group.id === 'new_gems';
 
         const colDOM = document.createElement('div');
-        colDOM.className = 'board-column';
+        colDOM.className = `board-column ${isNewGroup ? 'is-new-column' : ''}`;
         colDOM.innerHTML = `
           <div class="column-header">
             <div class="column-title">
-              <i data-lucide="${group.icon || 'folder'}" style="width: 14px;"></i>
+              <i data-lucide="${group.icon || 'folder'}" style="width: 14px; ${isNewGroup ? 'color: var(--accent-new);' : ''}"></i>
               <span>${escapeHTML(group.name)}</span>
             </div>
             <span style="font-size: 11px; color: var(--text-tertiary);">${colGems.length}</span>
           </div>
           <div class="column-cards" data-group-id="${group.id}">
+            ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
             ${colGems.map(gem => createCardHTML(gem)).join('')}
           </div>
         `;
@@ -1036,20 +1071,25 @@
     }
 
     function createCardHTML(gem) {
+      const isNew = gem.groupId === 'new_gems';
+
       return `
         <div class="notion-card" draggable="true" data-gem-id="${gem.id}">
           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <span class="card-icon">${gem.icon || '💎'}</span>
-            <div class="card-actions">
-              <button class="btn-icon" title="Favorito" onclick="toggleFavorite('${gem.id}')">
-                <i data-lucide="star" style="width: 13px; ${gem.favorite ? 'fill: #f59e0b; color: #f59e0b;' : ''}"></i>
-              </button>
-              <button class="btn-icon" title="Editar" onclick="editGem('${gem.id}')">
-                <i data-lucide="edit-2" style="width: 13px;"></i>
-              </button>
-              <button class="btn-icon" title="Eliminar" onclick="deleteGem('${gem.id}')">
-                <i data-lucide="trash" style="width: 13px;"></i>
-              </button>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              ${isNew ? `<span class="new-badge">Novo</span>` : ''}
+              <div class="card-actions">
+                <button class="btn-icon" title="Favorito" onclick="toggleFavorite('${gem.id}')">
+                  <i data-lucide="star" style="width: 13px; ${gem.favorite ? 'fill: #f59e0b; color: #f59e0b;' : ''}"></i>
+                </button>
+                <button class="btn-icon" title="Editar" onclick="editGem('${gem.id}')">
+                  <i data-lucide="edit-2" style="width: 13px;"></i>
+                </button>
+                <button class="btn-icon" title="Eliminar" onclick="deleteGem('${gem.id}')">
+                  <i data-lucide="trash" style="width: 13px;"></i>
+                </button>
+              </div>
             </div>
           </div>
           <div class="card-title">${escapeHTML(gem.name)}</div>
@@ -1082,7 +1122,10 @@
             return `
               <tr>
                 <td style="font-size: 16px;">${gem.icon || '💎'}</td>
-                <td style="font-weight: 600;">${escapeHTML(gem.name)}</td>
+                <td style="font-weight: 600;">
+                  ${escapeHTML(gem.name)}
+                  ${gem.groupId === 'new_gems' ? `<span class="new-badge" style="margin-left: 6px;">Novo</span>` : ''}
+                </td>
                 <td><span class="tag-badge">${escapeHTML(group ? group.name : 'Geral')}</span></td>
                 <td style="color: var(--text-secondary); font-size: 12px;">${escapeHTML(gem.desc || '-')}</td>
                 <td style="text-align: right;">
@@ -1095,6 +1138,53 @@
       `;
       return table;
     }
+
+    // --- SMART MERGE LOGIC FOR NEW GEMS ---
+    function mergeIncomingGems(incomingGems) {
+      let newCount = 0;
+
+      incomingGems.forEach(item => {
+        if (!item.name || !item.url) return;
+
+        // Check if Gem already exists in dashboard by URL or exact Name
+        const existingIndex = state.gems.findIndex(g => g.url === item.url || g.name.toLowerCase().trim() === item.name.toLowerCase().trim());
+
+        if (existingIndex !== -1) {
+          // EXISTING GEM: Keep its existing groupId, favorite status, custom desc & icon!
+          // We only update URL if changed
+          state.gems[existingIndex].url = item.url;
+        } else {
+          // NEW GEM: Put in "📥 Novos Gems" folder!
+          state.gems.push({
+            id: 'gem_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+            name: item.name,
+            url: item.url,
+            desc: item.desc || 'Importado automaticamente da conta Google Gemini.',
+            icon: item.icon || '💎',
+            groupId: 'new_gems', // Put in NEW folder
+            favorite: false
+          });
+          newCount++;
+        }
+      });
+
+      saveState();
+      renderApp();
+
+      if (newCount > 0) {
+        showToast(`✨ ${newCount} novos Gems detetados e colocados em "📥 Novos Gems"!`);
+        switchCategory('new_gems');
+      } else {
+        showToast('Nenhum Gem novo detetado. A tua lista já estava atualizada!');
+      }
+    }
+
+    // Listen for direct sync messages (from Bookmarklet or Chrome Extension)
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'GEMINI_GEMS_SYNC') {
+        mergeIncomingGems(event.data.gems);
+      }
+    });
 
     // --- DRAG AND DROP ---
     let draggedCardId = null;
@@ -1133,7 +1223,7 @@
             gem.groupId = targetGroupId;
             saveState();
             renderApp();
-            showToast(`Gem movido para ${state.groups.find(g => g.id === targetGroupId)?.name}`);
+            showToast(`Gem organizado para "${state.groups.find(g => g.id === targetGroupId)?.name}"`);
           }
         });
       });
@@ -1273,30 +1363,37 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
           name,
           url: 'https://gemini.google.com/app/gems/view',
           desc: document.getElementById('aiPromptInput').value.trim(),
-          groupId,
+          groupId: 'new_gems', // Put in NEW folder by default
           icon: '✨',
           favorite: false
         });
         saveState();
         renderApp();
         closeModal('aiBuilderModal');
-        showToast('Gem adicionado!');
+        showToast('Gem adicionado a "📥 Novos Gems"!');
       }
     }
 
-    // BOOKMARKLET & SYNC
+    // BOOKMARKLET & AUTOMATIC SYNC
+    function triggerAutoSync() {
+      openSyncModal();
+    }
+
     function openSyncModal() {
       const code = `javascript:(function(){
-        const cards = document.querySelectorAll('a[href*="/app/gems/"], a[href*="/gems/"]');
-        const gems = [];
-        cards.forEach((card, i) => {
-          const href = card.href;
-          const nameEl = card.querySelector('div, span, h3');
-          const name = nameEl ? nameEl.innerText.split('\\n')[0] : 'Gem ' + (i+1);
-          if(href) gems.push({ name, url: href, desc: '', icon: '💎', groupId: 'coding' });
-        });
-        navigator.clipboard.writeText(JSON.stringify(gems, null, 2));
-        alert('✨ Gems copiados!');
+        try {
+          const cards = document.querySelectorAll('a[href*="/app/gems/"], a[href*="/gems/"]');
+          const gems = [];
+          cards.forEach((card, i) => {
+            const href = card.href;
+            const nameEl = card.querySelector('div, span, h3');
+            const name = nameEl ? nameEl.innerText.split('\\n')[0] : 'Gem ' + (i+1);
+            if(href) gems.push({ name, url: href, desc: 'Sincronizado da conta Google Gemini', icon: '💎' });
+          });
+          const json = JSON.stringify(gems, null, 2);
+          navigator.clipboard.writeText(json);
+          alert('✨ ' + gems.length + ' Gems extraídos! Volte ao seu Dashboard e clique em Importar.');
+        } catch(e) { alert('Erro: ' + e.message); }
       })();`;
       document.getElementById('bookmarkletLink').href = code.replace(/\n\s+/g, '');
       document.getElementById('syncModal').classList.add('active');
@@ -1308,26 +1405,11 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
       try {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed)) {
-          parsed.forEach(item => {
-            if (item.name && item.url) {
-              state.gems.push({
-                id: 'gem_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
-                name: item.name,
-                url: item.url,
-                desc: item.desc || '',
-                icon: item.icon || '💎',
-                groupId: state.groups[0]?.id || 'coding',
-                favorite: false
-              });
-            }
-          });
-          saveState();
-          renderApp();
+          mergeIncomingGems(parsed);
           closeModal('syncModal');
-          showToast('Importado com sucesso!');
         }
       } catch (e) {
-        alert('JSON inválido');
+        alert('JSON inválido. Por favor verifica o texto colado.');
       }
     }
 
@@ -1341,7 +1423,7 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
       toast.className = 'toast';
       toast.innerText = msg;
       container.appendChild(toast);
-      setTimeout(() => toast.remove(), 2500);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     function toggleTheme() {
