@@ -419,13 +419,16 @@
       border-radius: var(--radius-md);
       padding: 10px;
       border: 1px solid var(--border-subtle);
-      transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .board-column.collapsed {
-      width: 44px;
-      min-width: 44px;
-      padding: 10px 4px;
+    .board-column.dragging-column {
+      opacity: 0.4;
+      border: 1.5px dashed var(--accent);
+    }
+
+    .board-column.drag-column-over {
+      border-left: 3px solid var(--accent);
+      padding-left: 8px; /* offset border change */
     }
 
     .board-column.is-new-column {
@@ -1181,51 +1184,37 @@
         const isCollapsed = state.collapsedGroups && state.collapsedGroups[group.id];
 
         const colDOM = document.createElement('div');
-        if (isCollapsed) {
-          colDOM.className = `board-column collapsed ${isNewGroup ? 'is-new-column' : ''}`;
-          colDOM.innerHTML = `
-            <div class="column-header" style="flex-direction: column; align-items: center; gap: 12px; padding: 4px 0 10px;">
-              <button class="header-action-btn" onclick="toggleGroupCollapse('${group.id}')" title="Expandir Grupo" style="box-shadow: none;">
-                <i data-lucide="chevron-right" style="width: 14px; height: 14px;"></i>
+        colDOM.className = `board-column ${isNewGroup ? 'is-new-column' : ''} ${isCollapsed ? 'collapsed-vertical' : ''}`;
+        colDOM.setAttribute('draggable', 'true');
+        colDOM.setAttribute('data-column-group-id', group.id);
+        
+        colDOM.innerHTML = `
+          <div class="column-header" style="cursor: grab; display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsed ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsed ? '0' : '10px'};">
+            <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('${group.id}')">
+              <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="${isCollapsed ? 'Expandir Grupo' : 'Colapsar Grupo'}">
+                <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 13px; height: 13px;"></i>
               </button>
-              <div class="column-title-vertical" style="writing-mode: vertical-rl; text-orientation: mixed; font-weight: 600; font-size: 13px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;" onclick="toggleGroupCollapse('${group.id}')">
-                <i data-lucide="${group.icon || 'folder'}" style="width: 14px; height: 14px; transform: rotate(-90deg); ${isNewGroup ? 'color: var(--accent-new);' : ''}"></i>
-                <span>${escapeHTML(group.name)}</span>
-              </div>
-              <span style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
+              <i data-lucide="${group.icon || 'folder'}" style="width: 14px; ${isNewGroup ? 'color: var(--accent-new);' : ''}"></i>
+              <span style="font-weight: 600;">${escapeHTML(group.name)}</span>
             </div>
-            <div class="column-cards" style="display: none;" data-group-id="${group.id}"></div>
-          `;
-        } else {
-          colDOM.className = `board-column ${isNewGroup ? 'is-new-column' : ''}`;
-          colDOM.innerHTML = `
-            <div class="column-header">
-              <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('${group.id}')">
-                <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="Colapsar Grupo">
-                  <i data-lucide="chevron-down" style="width: 13px; height: 13px;"></i>
+            <div class="column-header-actions">
+              <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
+              <div class="column-action-buttons">
+                <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${group.id}')" title="Editar Grupo">
+                  <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
                 </button>
-                <i data-lucide="${group.icon || 'folder'}" style="width: 14px; ${isNewGroup ? 'color: var(--accent-new);' : ''}"></i>
-                <span style="font-weight: 600;">${escapeHTML(group.name)}</span>
-              </div>
-              <div class="column-header-actions">
-                <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
-                <div class="column-action-buttons">
-                  <button class="header-action-btn" onclick="editGroup('${group.id}')" title="Editar Grupo">
-                    <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
-                  </button>
-                  ${!isNewGroup ? `
-                  <button class="header-action-btn" onclick="deleteGroup('${group.id}')" title="Eliminar Grupo">
-                    <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
-                  </button>` : ''}
-                </div>
+                ${!isNewGroup ? `
+                <button class="header-action-btn" onclick="event.stopPropagation(); deleteGroup('${group.id}')" title="Eliminar Grupo">
+                  <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
+                </button>` : ''}
               </div>
             </div>
-            <div class="column-cards" data-group-id="${group.id}">
-              ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
-              ${colGems.map(gem => createCardHTML(gem)).join('')}
-            </div>
-          `;
-        }
+          </div>
+          <div class="column-cards" data-group-id="${group.id}" style="${isCollapsed ? 'display: none;' : ''}">
+            ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
+            ${colGems.map(gem => createCardHTML(gem)).join('')}
+          </div>
+        `;
         container.appendChild(colDOM);
       });
 
@@ -1525,12 +1514,17 @@
 
     // --- DRAG AND DROP ---
     let draggedCardId = null;
+    let draggedColumnId = null;
+
     function setupDragAndDrop() {
       const cards = document.querySelectorAll('.notion-card');
       const cols = document.querySelectorAll('.column-cards');
+      const columnsDOM = document.querySelectorAll('.board-column');
 
+      // Card Drag & Drop
       cards.forEach(card => {
         card.addEventListener('dragstart', (e) => {
+          e.stopPropagation(); // Prevent column dragging when dragging a card
           draggedCardId = card.dataset.gemId;
           card.classList.add('dragging');
           e.dataTransfer.setData('text/plain', draggedCardId);
@@ -1545,7 +1539,9 @@
       cols.forEach(col => {
         col.addEventListener('dragover', (e) => {
           e.preventDefault();
-          col.classList.add('drag-over');
+          if (draggedCardId) {
+            col.classList.add('drag-over');
+          }
         });
         col.addEventListener('dragleave', () => col.classList.remove('drag-over'));
         col.addEventListener('drop', (e) => {
@@ -1561,6 +1557,55 @@
             saveState();
             renderApp();
             showToast(`Gem organizado para "${state.groups.find(g => g.id === targetGroupId)?.name}"`);
+          }
+        });
+      });
+
+      // Column Drag & Drop (Group Reordering)
+      columnsDOM.forEach(col => {
+        col.addEventListener('dragstart', (e) => {
+          if (e.target.classList.contains('board-column')) {
+            draggedColumnId = col.dataset.columnGroupId;
+            col.classList.add('dragging-column');
+            e.dataTransfer.setData('text/column-id', draggedColumnId);
+          }
+        });
+
+        col.addEventListener('dragend', () => {
+          col.classList.remove('dragging-column');
+          draggedColumnId = null;
+          document.querySelectorAll('.board-column').forEach(c => c.classList.remove('drag-column-over'));
+        });
+
+        col.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (draggedColumnId && draggedColumnId !== col.dataset.columnGroupId) {
+            col.classList.add('drag-column-over');
+          }
+        });
+
+        col.addEventListener('dragleave', () => {
+          col.classList.remove('drag-column-over');
+        });
+
+        col.addEventListener('drop', (e) => {
+          e.preventDefault();
+          col.classList.remove('drag-column-over');
+
+          const colId = e.dataTransfer.getData('text/column-id') || draggedColumnId;
+          const targetColId = col.dataset.columnGroupId;
+
+          if (colId && targetColId && colId !== targetColId) {
+            const fromIndex = state.groups.findIndex(g => g.id === colId);
+            const toIndex = state.groups.findIndex(g => g.id === targetColId);
+            if (fromIndex !== -1 && toIndex !== -1) {
+              const temp = state.groups[fromIndex];
+              state.groups.splice(fromIndex, 1);
+              state.groups.splice(toIndex, 0, temp);
+              saveState();
+              renderApp();
+              showToast('Grupo reordenado!');
+            }
           }
         });
       });
