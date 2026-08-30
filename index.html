@@ -976,7 +976,7 @@
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     }
 
-    // Auto-check for newly synced gems from localStorage shared channel
+    // Auto-check for newly synced gems from localStorage shared channel & extension cache
     function checkAutoSyncedGems() {
       try {
         const raw = localStorage.getItem(SHARED_SYNC_KEY);
@@ -988,6 +988,9 @@
           }
         }
       } catch (e) {}
+
+      // Automatically query Chrome Extension cache
+      window.postMessage({ type: 'REQUEST_GEMINI_DIRECT_FETCH' }, '*');
     }
 
     function renderApp() {

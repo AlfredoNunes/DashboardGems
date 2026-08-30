@@ -1,15 +1,60 @@
-// Background Service Worker for Direct Gemini Fetch
+// Background Service Worker for Gemini Gems Auto-Sync
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'GEMS_SCRAPED_FROM_TAB') {
+    // 1. Update cache with Gems scraped directly from the active Gemini tab
+    const gems = message.gems;
+    chrome.storage.local.set({ syncedGems: gems, lastSync: Date.now() }, () => {
+      console.log('Auto-Sync: Guardados', gems.length, 'Gems da página ativa.');
+      // 2. Broadcast to all open Dashboard tabs
+      broadcastToDashboards(gems);
+    });
+  }
+
+  if (message.type === 'REQUEST_LATEST_GEMS') {
+    // Return cached Gems from local storage
+    chrome.storage.local.get(['syncedGems'], (result) => {
+      const gems = result.syncedGems || [];
+      sendResponse({ success: true, gems: gems });
+    });
+    return true; // Keep channel open for async response
+  }
+
   if (message.type === 'FETCH_GEMINI_GEMS_DIRECT') {
+    // Fallback: direct background fetch (may hit CORS or cookie limits depending on browser state)
     fetchGemsFromGoogleAccount().then(gems => {
       sendResponse({ success: true, gems: gems });
     }).catch(err => {
-      sendResponse({ success: false, error: err.message });
+      // If direct background fetch fails, we return cached gems if available
+      chrome.storage.local.get(['syncedGems'], (result) => {
+        const gems = result.syncedGems || [];
+        if (gems.length > 0) {
+          sendResponse({ success: true, gems: gems, warning: 'Lido da cache local.' });
+        } else {
+          sendResponse({ success: false, error: err.message });
+        }
+      });
     });
     return true; // Keep channel open for async response
   }
 });
 
+// Helper function to broadcast new gems to all open Dashboard tabs
+function broadcastToDashboards(gems) {
+  chrome.tabs.query({}, (tabs) => {
+    tabs.forEach(tab => {
+      const url = tab.url || '';
+      // Match typical dashboard URLs
+      if (url.includes('localhost') || url.includes('github.io') || url.startsWith('file://')) {
+        chrome.tabs.sendMessage(tab.id, { type: 'BROADCAST_GEMINI_GEMS', gems: gems }, () => {
+          // Ignore connection errors for unrelated tabs
+          if (chrome.runtime.lastError) { /* quiet */ }
+        });
+      }
+    });
+  });
+}
+
+// Background fetch helper (remains as secondary fallback option)
 async function fetchGemsFromGoogleAccount() {
   const response = await fetch('https://gemini.google.com/gems/view', {
     credentials: 'include'
@@ -20,11 +65,11 @@ async function fetchGemsFromGoogleAccount() {
   }
 
   const htmlText = await response.text();
-
-  // Parse HTML
   const gems = parseGemsFromHTML(htmlText);
-  await chrome.storage.local.set({ syncedGems: gems, lastSync: Date.now() });
-
+  
+  if (gems.length > 0) {
+    await chrome.storage.local.set({ syncedGems: gems, lastSync: Date.now() });
+  }
   return gems;
 }
 
@@ -59,16 +104,7 @@ function parseGemsFromHTML(html) {
     return '💎';
   }
 
-  // Regex extraction from raw HTML text (handles Angular/Lit SSR & client data)
-  // Look for JSON or HTML blocks containing Gem names & descriptions
-  const gemIdMatches = html.matchAll(/gems\/view\?gem_id=([a-zA-Z0-9_-]+)/g);
-  for (const match of gemIdMatches) {
-    const gemId = match[1];
-    add('Gem ' + gemId, 'Gemid: ' + gemId, 'https://gemini.google.com/app?gem_id=' + gemId);
-  }
-
-  // Parse text using DOMParser if browser DOM available or regex
-  // Extract text patterns: Name followed by Description
+  // Regex parser fallback for raw HTML
   const titles = html.match(/"name":"([^"]+)"/g) || [];
   titles.forEach(t => {
     const name = t.replace(/"name":"/, '').replace(/"/, '');
