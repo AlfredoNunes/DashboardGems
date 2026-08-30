@@ -182,6 +182,44 @@
       color: var(--text-tertiary);
     }
 
+    .group-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .group-action-buttons {
+      display: none;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .menu-item:hover .group-action-buttons {
+      display: flex;
+    }
+
+    .menu-item:hover .menu-item-count {
+      display: none;
+    }
+
+    .sidebar-action-btn {
+      padding: 2px;
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sidebar-action-btn:hover {
+      background: var(--bg-active);
+      color: var(--text-primary);
+    }
+
     .new-badge {
       background: var(--accent-new);
       color: #ffffff;
@@ -866,6 +904,7 @@
         <button class="btn-icon" onclick="closeModal('groupModal')"><i data-lucide="x" style="width: 16px;"></i></button>
       </div>
       <form onsubmit="saveGroup(event)">
+        <input type="hidden" id="groupIdInput">
         <div class="form-group">
           <label class="form-label">Nome do Grupo</label>
           <input type="text" id="groupNameInput" class="form-control" required placeholder="ex: Marketing, Finanças...">
@@ -1023,7 +1062,17 @@
               <i data-lucide="${group.icon || 'folder'}" style="width: 14px;"></i>
               <span>${escapeHTML(group.name)}</span>
             </div>
-            <span class="menu-item-count">${count}</span>
+            <div class="group-item-actions">
+              <span class="menu-item-count">${count}</span>
+              <div class="group-action-buttons">
+                <button class="sidebar-action-btn" onclick="event.stopPropagation(); editGroup('${group.id}')" title="Editar Grupo">
+                  <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
+                </button>
+                <button class="sidebar-action-btn" onclick="event.stopPropagation(); deleteGroup('${group.id}')" title="Eliminar Grupo">
+                  <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
+                </button>
+              </div>
+            </div>
           </div>
         `;
       }).join('');
@@ -1514,20 +1563,72 @@
       showToast('Guardado com sucesso!');
     }
 
-    function openGroupModal() {
-      document.getElementById('groupModal').classList.add('active');
+    function openGroupModal(groupToEdit = null) {
+      const modal = document.getElementById('groupModal');
+      const title = modal.querySelector('.modal-title');
+      const btn = modal.querySelector('button[type="submit"]');
+      
+      if (groupToEdit) {
+        title.innerText = 'Editar Grupo';
+        btn.innerText = 'Guardar Alterações';
+        document.getElementById('groupIdInput').value = groupToEdit.id;
+        document.getElementById('groupNameInput').value = groupToEdit.name;
+        document.getElementById('groupIconInput').value = groupToEdit.icon || 'folder';
+      } else {
+        title.innerText = 'Novo Grupo';
+        btn.innerText = 'Criar Grupo';
+        document.getElementById('groupIdInput').value = '';
+        document.getElementById('groupNameInput').value = '';
+        document.getElementById('groupIconInput').value = 'folder';
+      }
+      modal.classList.add('active');
+    }
+
+    function editGroup(groupId) {
+      const group = state.groups.find(g => g.id === groupId);
+      if (group) openGroupModal(group);
+    }
+
+    function deleteGroup(groupId) {
+      const group = state.groups.find(g => g.id === groupId);
+      if (!group) return;
+
+      if (confirm(`Eliminar o grupo "${group.name}"? Os Gems deste grupo serão movidos para "📥 Novos Gems".`)) {
+        state.gems.forEach(g => {
+          if (g.groupId === groupId) g.groupId = 'new_gems';
+        });
+        state.groups = state.groups.filter(g => g.id !== groupId);
+        if (state.currentCategory === groupId) {
+          state.currentCategory = 'all';
+        }
+        saveState();
+        renderApp();
+        showToast('Grupo eliminado.');
+      }
     }
 
     function saveGroup(e) {
       e.preventDefault();
+      const id = document.getElementById('groupIdInput').value;
       const name = document.getElementById('groupNameInput').value.trim();
       const icon = document.getElementById('groupIconInput').value.trim() || 'folder';
-      if (name) {
+
+      if (!name) return;
+
+      if (id) {
+        const idx = state.groups.findIndex(g => g.id === id);
+        if (idx !== -1) {
+          state.groups[idx].name = name;
+          state.groups[idx].icon = icon;
+        }
+      } else {
         state.groups.push({ id: 'group_' + Date.now(), name, icon });
-        saveState();
-        renderApp();
-        closeModal('groupModal');
       }
+
+      saveState();
+      renderApp();
+      closeModal('groupModal');
+      showToast('Grupo guardado com sucesso.');
     }
 
     // AI BUILDER
