@@ -1,18 +1,30 @@
 {
   "manifest_version": 3,
-  "name": "Gemini Gems Dashboard Sync",
-  "version": "1.0.0",
-  "description": "Sincroniza automaticamente os teus Gemini Gems para o teu Dashboard Notion-style.",
+  "name": "Gemini Gems Auto-Sync",
+  "version": "2.0.0",
+  "description": "Conecta a tua conta Google Gemini ao teu Dashboard para sincronização direta e automática dos teus Gems.",
   "permissions": [
     "storage",
-    "activeTab"
+    "activeTab",
+    "scripting"
   ],
   "host_permissions": [
-    "https://gemini.google.com/*"
+    "https://gemini.google.com/*",
+    "file:///*",
+    "http://localhost/*",
+    "https://*.github.io/*"
   ],
+  "background": {
+    "service_worker": "background.js"
+  },
   "content_scripts": [
     {
-      "matches": ["https://gemini.google.com/*"],
+      "matches": [
+        "https://gemini.google.com/*",
+        "file:///*index.html*",
+        "http://localhost/*",
+        "https://*.github.io/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle"
     }

@@ -562,7 +562,7 @@
       border: 1px solid var(--border-color);
       border-radius: var(--radius-lg);
       width: 100%;
-      max-width: 560px;
+      max-width: 580px;
       padding: 20px;
       box-shadow: var(--shadow-md);
     }
@@ -720,8 +720,8 @@
           <i data-lucide="search" style="width: 13px;"></i>
           <input type="text" id="searchInput" placeholder="Pesquisar Gems...">
         </div>
-        <button class="btn" onclick="triggerAutoSync()" title="Sincronizar com a conta Google">
-          <i data-lucide="refresh-cw" style="width: 13px;"></i> Sincronizar
+        <button class="btn" onclick="openSyncModal()" title="Sincronizar Gems da conta Google">
+          <i data-lucide="refresh-cw" style="width: 13px;"></i> Sincronizar Google
         </button>
         <button class="btn btn-primary" onclick="openGemModal()">
           <i data-lucide="plus" style="width: 13px;"></i> Novo Gem
@@ -733,7 +733,7 @@
       <h1 class="page-title" id="pageTitle">
         <span>💎</span> <span id="pageTitleText">Todos os Gems</span>
       </h1>
-      <p class="page-desc" id="pageDesc">Gems da tua conta Google Gemini. Novos Gems ficam na pasta "📥 Novos Gems" para organizares.</p>
+      <p class="page-desc" id="pageDesc">Sincroniza os Gems da tua conta Google Gemini. Novos Gems ficam na pasta "📥 Novos Gems" para organizares.</p>
     </div>
 
     <div class="view-controls">
@@ -871,36 +871,59 @@
     </div>
   </div>
 
-  <!-- MODAL: SYNC & AUTOMATION -->
+  <!-- MODAL: SYNC & GOOGLE FETCH -->
   <div class="modal-overlay" id="syncModal">
-    <div class="modal-box" style="max-width: 580px;">
+    <div class="modal-box" style="max-width: 600px;">
       <div class="modal-header">
-        <h3 class="modal-title">Sincronização de Gems da Conta Google</h3>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="refresh-cw" style="width: 18px; color: var(--accent);"></i>
+          <h3 class="modal-title">Sincronizar com a Conta Google Gemini</h3>
+        </div>
         <button class="btn-icon" onclick="closeModal('syncModal')"><i data-lucide="x" style="width: 16px;"></i></button>
       </div>
-      
-      <p style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
-        Como a Google exige a tua sessão iniciada em <code>gemini.google.com</code>, podes importar todos os teus Gems automaticamente:
-      </p>
 
+      <!-- DIRECT FETCH VIA EXTENSION -->
       <div style="background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px;">
-        <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 4px;">Passo 1: Clica no botão de Sincronização na página do Gemini</h4>
-        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
-          Arrasta este botão para os Favoritos do teu browser. Na página <a href="https://gemini.google.com/gems/view" target="_blank" style="color: var(--accent);">gemini.google.com/gems/view</a>, clica nele para extrair todos os teus Gems.
+        <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+          <span>⚡ Método 1: Sincronização Direta em 1 Clique</span>
+          <span id="extensionBadge" style="font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 3px; background: #e0f2fe; color: #0284c7;">A verificar...</span>
+        </h4>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
+          Busca os teus Gems diretamente da tua conta Google em segundo plano sem precisares de copiar nem colar nada!
         </p>
-        <div style="text-align: center;">
-          <a id="bookmarkletLink" class="btn btn-primary" style="text-decoration: none;" href="#">✨ Sincronizar Gems do Gemini</a>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="btn btn-primary" onclick="requestDirectExtensionFetch()" style="flex-grow: 1; justify-content: center;">
+            <i data-lucide="zap" style="width: 13px;"></i> Sincronizar Agora com a Conta Google
+          </button>
         </div>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Passo 2: Colar JSON (Automático via Clipboard)</label>
-        <textarea id="importJsonText" class="form-control" style="min-height: 100px;" placeholder="O JSON de Gems extraído é colado aqui automaticamente..."></textarea>
+      <!-- EASY TEXT PASTE PARSER (100% RELIABLE) -->
+      <div style="background: var(--bg-sidebar); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; margin-bottom: 14px;">
+        <h4 style="font-size: 13.5px; font-weight: 600; margin-bottom: 4px;">⚡ Método 2: Importação Instantânea por Texto (Ctrl+A -> Ctrl+C)</h4>
+        <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+          Abre a página <a href="https://gemini.google.com/gems/view" target="_blank" style="color: var(--accent); font-weight: 500;">gemini.google.com/gems/view</a>, seleciona todo o texto (<code>Ctrl+A</code>) e cola-o na caixa abaixo. O nosso leitor extrai **TODOS** os teus Gems automaticamente!
+        </p>
+        <textarea id="rawTextPasteInput" class="form-control" style="min-height: 90px;" placeholder="Cola aqui o texto copiado da página de Gems do Gemini (ex: IT teacher, Revisor Técnico...)..." oninput="parsePastedTextInstant()"></textarea>
+      </div>
+
+      <!-- BOOKMARKLET FALLBACK -->
+      <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+        <details>
+          <summary style="font-size: 12px; color: var(--text-tertiary); cursor: pointer; font-weight: 500;">Ver Método 3: Bookmarklet / Favorito de Navegador</summary>
+          <div style="padding-top: 8px;">
+            <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 8px;">
+              Arrasta o botão para os teus favoritos do browser e clica nele quando estiveres em <code>gemini.google.com/gems/view</code>.
+            </p>
+            <div style="text-align: center;">
+              <a id="bookmarkletLink" class="btn" style="text-decoration: none;" href="#">✨ Sincronizar Gems</a>
+            </div>
+          </div>
+        </details>
       </div>
 
       <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
         <button type="button" class="btn" onclick="closeModal('syncModal')">Fechar</button>
-        <button type="button" class="btn btn-primary" onclick="importJsonData()">Importar & Organizar</button>
       </div>
     </div>
   </div>
@@ -910,6 +933,8 @@
   <script>
     const STORAGE_KEY = 'gemini_dashboard_notion_v2';
     const SHARED_SYNC_KEY = 'gemini_dashboard_shared_sync';
+
+    let isExtensionInstalled = false;
 
     const defaultState = {
       theme: 'light',
@@ -952,7 +977,7 @@
           const incomingGems = JSON.parse(raw);
           if (Array.isArray(incomingGems) && incomingGems.length > 0) {
             mergeIncomingGems(incomingGems);
-            localStorage.removeItem(SHARED_SYNC_KEY); // Clear after merge
+            localStorage.removeItem(SHARED_SYNC_KEY);
           }
         }
       } catch (e) {}
@@ -1132,6 +1157,8 @@
         if (!item.name) return;
 
         const cleanName = item.name.trim();
+        if (cleanName.length < 2 || ['my gems', 'premade gems', 'show more'].includes(cleanName.toLowerCase())) return;
+
         const existingIndex = state.gems.findIndex(g => 
           (g.url && item.url && g.url === item.url) || 
           g.name.toLowerCase().trim() === cleanName.toLowerCase()
@@ -1159,10 +1186,10 @@
       renderApp();
 
       if (newCount > 0) {
-        showToast(`✨ ${newCount} novos Gems detetados e adicionados a "📥 Novos Gems"!`);
+        showToast(`✨ ${newCount} novos Gems adicionados a "📥 Novos Gems"!`);
         switchCategory('new_gems');
-      } else {
-        showToast('Sincronização efetuada: a tua lista já está atualizada!');
+      } else if (incomingGems.length > 0) {
+        showToast('Sincronização efetuada: todos os teus Gems já estão organizados!');
       }
     }
 
@@ -1179,10 +1206,81 @@
       return '💎';
     }
 
-    // Listen for direct sync messages
+    // --- INSTANT TEXT PARSER (PASTE COPIED GEMINI PAGE TEXT) ---
+    function parsePastedTextInstant() {
+      const text = document.getElementById('rawTextPasteInput').value;
+      if (!text || text.length < 10) return;
+
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+      const gems = [];
+      
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        
+        // Skip generic header UI lines
+        if (['gemini', 'gems', 'my gems', 'premade gems', 'show more', 'new gem', 'activity', 'new chat', 'search chats', 'images', 'videos', 'library', 'recent'].includes(line.toLowerCase())) {
+          continue;
+        }
+
+        // Look for title and description pairs in text
+        if (line.length >= 3 && !line.includes('http') && !line.includes('©')) {
+          const nextLine = lines[i + 1] || '';
+          const isNextDesc = nextLine.length > 5 && !['share', 'edit', 'delete', 'more_vert'].includes(nextLine.toLowerCase());
+          
+          gems.push({
+            name: line,
+            desc: isNextDesc ? nextLine : 'Importado do Gemini',
+            url: `https://gemini.google.com/app?gem_name=${encodeURIComponent(line)}`
+          });
+
+          if (isNextDesc) i++; // advance
+        }
+      }
+
+      if (gems.length > 0) {
+        mergeIncomingGems(gems);
+        showToast(`✨ ${gems.length} Gems extraídos do texto colado!`);
+      }
+    }
+
+    // Direct Extension Communication
+    function requestDirectExtensionFetch() {
+      window.postMessage({ type: 'REQUEST_GEMINI_DIRECT_FETCH' }, '*');
+      showToast('A ligar à tua conta Google Gemini...');
+
+      // Fallback timer if extension is not installed
+      setTimeout(() => {
+        if (!isExtensionInstalled) {
+          window.open('https://gemini.google.com/gems/view', '_blank');
+          showToast('A abrir gemini.google.com/gems/view... Seleciona todo o texto (Ctrl+A) e cola na caixa!');
+        }
+      }, 1500);
+    }
+
+    // Listen for extension & sync messages
     window.addEventListener('message', (event) => {
-      if (event.data && event.data.type === 'GEMINI_GEMS_SYNC') {
-        mergeIncomingGems(event.data.gems);
+      if (event.data) {
+        if (event.data.type === 'GEMINI_EXTENSION_INSTALLED') {
+          isExtensionInstalled = true;
+          const badge = document.getElementById('extensionBadge');
+          if (badge) {
+            badge.innerText = 'Extensão Ativa ✓';
+            badge.style.background = '#dcfce7';
+            badge.style.color = '#15803d';
+          }
+        }
+        if (event.data.type === 'GEMINI_GEMS_SYNC_RESPONSE') {
+          if (event.data.success && event.data.gems) {
+            mergeIncomingGems(event.data.gems);
+            closeModal('syncModal');
+          } else {
+            showToast('Erro: ' + (event.data.error || 'Abre a página do Gemini e faz login.'));
+            window.open('https://gemini.google.com/gems/view', '_blank');
+          }
+        }
+        if (event.data.type === 'GEMINI_GEMS_SYNC') {
+          mergeIncomingGems(event.data.gems);
+        }
       }
     });
 
@@ -1374,18 +1472,11 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
       }
     }
 
-    // BOOKMARKLET & AUTOMATIC SYNC
-    function triggerAutoSync() {
-      openSyncModal();
-    }
-
     function openSyncModal() {
-      // Powerful Universal Scraper Bookmarklet that extracts ALL gems (both premade and custom list items like IT Teacher, Revisor, GeoMaster, etc.)
       const code = `javascript:(function(){
         try {
           const gems = [];
           const seen = new Set();
-          
           function add(name, desc, url) {
             if(!name || name.length < 2) return;
             const clean = name.trim();
@@ -1394,13 +1485,10 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
             gems.push({ name: clean, desc: (desc || '').trim(), url: url || 'https://gemini.google.com/app' });
           }
 
-          // Scan all rows & items on the page
           const rows = document.querySelectorAll('div, li, article, section, [role="listitem"], [role="article"]');
           rows.forEach(r => {
             const txt = r.innerText || '';
             const lines = txt.split('\\n').map(l => l.trim()).filter(l => l.length > 0);
-            
-            // Look for title & desc pairs
             if(lines.length >= 2) {
               const title = lines.find(l => l.length > 2 && !['share', 'edit', 'delete', 'more_vert', 'new gem', 'my gems', 'premade gems', 'show more'].includes(l.toLowerCase()));
               const desc = lines.find(l => l !== title && l.length > 4) || '';
@@ -1409,51 +1497,19 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
             }
           });
 
-          // Scan direct links
-          document.querySelectorAll('a[href]').forEach(a => {
-            const h = a.href || '';
-            if(h.includes('/gems/') || h.includes('gem_id=')) {
-              add(a.innerText || 'Gem', '', h);
-            }
-          });
-
           if(gems.length > 0) {
             const json = JSON.stringify(gems, null, 2);
             navigator.clipboard.writeText(json);
             try { localStorage.setItem('gemini_dashboard_shared_sync', json); } catch(e){}
-            alert('✨ ' + gems.length + ' Gems da tua conta Google extraídos com sucesso!\\n\\nO JSON foi copiado. Abre agora o teu Dashboard e clica em Importar (ou vai colar automaticamente).');
+            alert('✨ ' + gems.length + ' Gems extraídos com sucesso!\\n\\nO JSON foi copiado.');
           } else {
-            alert('Nenhum Gem encontrado na página. Certifica-te que estás em gemini.google.com/gems/view');
+            alert('Nenhum Gem encontrado na página. Selecione todo o texto (Ctrl+A) e cola no Dashboard!');
           }
-        } catch(e) { alert('Erro na extração: ' + e.message); }
+        } catch(e) { alert('Erro: ' + e.message); }
       })();`;
       
       document.getElementById('bookmarkletLink').href = code.replace(/\n\s+/g, '');
-      
-      // Auto-fill clipboard if user has JSON in clipboard
-      if (navigator.clipboard && navigator.clipboard.readText) {
-        navigator.clipboard.readText().then(txt => {
-          if (txt && (txt.includes('name') || txt.startsWith('['))) {
-            document.getElementById('importJsonText').value = txt;
-          }
-        }).catch(() => {});
-      }
-
       document.getElementById('syncModal').classList.add('active');
-    }
-
-    function importJsonData() {
-      const raw = document.getElementById('importJsonText').value.trim();
-      if (!raw) return;
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          mergeIncomingGems(parsed);
-          closeModal('syncModal');
-        }
-      } catch (e) {
-        alert('JSON inválido. Por favor cola a lista de Gems extraída.');
-      }
     }
 
     function closeModal(id) {
@@ -1489,7 +1545,6 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
       document.documentElement.setAttribute('data-theme', state.theme);
     }
 
-    // Check shared sync on load & focus
     checkAutoSyncedGems();
     window.addEventListener('focus', checkAutoSyncedGems);
 
