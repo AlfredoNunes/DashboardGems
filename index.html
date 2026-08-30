@@ -436,6 +436,44 @@
       color: var(--text-secondary);
     }
 
+    .column-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .column-action-buttons {
+      display: none;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .column-header:hover .column-action-buttons {
+      display: flex;
+    }
+
+    .column-header:hover .column-count {
+      display: none;
+    }
+
+    .header-action-btn {
+      padding: 2px;
+      color: var(--text-secondary);
+      border-radius: var(--radius-sm);
+      border: none;
+      background: transparent;
+      box-shadow: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .header-action-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
     .column-title {
       display: flex;
       align-items: center;
@@ -1137,7 +1175,18 @@
               <i data-lucide="${group.icon || 'folder'}" style="width: 14px; ${isNewGroup ? 'color: var(--accent-new);' : ''}"></i>
               <span>${escapeHTML(group.name)}</span>
             </div>
-            <span style="font-size: 11px; color: var(--text-tertiary);">${colGems.length}</span>
+            <div class="column-header-actions">
+              <span class="column-count" style="font-size: 11px; color: var(--text-tertiary);">${colGems.length}</span>
+              <div class="column-action-buttons">
+                <button class="header-action-btn" onclick="editGroup('${group.id}')" title="Editar Grupo">
+                  <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
+                </button>
+                ${!isNewGroup ? `
+                <button class="header-action-btn" onclick="deleteGroup('${group.id}')" title="Eliminar Grupo">
+                  <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
+                </button>` : ''}
+              </div>
+            </div>
           </div>
           <div class="column-cards" data-group-id="${group.id}">
             ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
