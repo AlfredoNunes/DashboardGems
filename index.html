@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini Gems Dashboard & IA Builder</title>
+  <meta name="description" content="Painel de controlo visual e gerador assistido por IA para criar e organizar os teus Gemini Gems.">
+  <meta name="color-scheme" content="dark light">
+  
+  <!-- Fontes Google: Inter & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f0c20 0%, #15102a 40%, #0d1b2a 100%);
+      --surface-bg: rgba(255, 255, 255, 0.04);
+      --surface-border: rgba(255, 255, 255, 0.08);
+      --surface-hover: rgba(255, 255, 255, 0.08);
+      --glass-blur: blur(16px);
+      
+      --accent-primary: #8b5cf6;
+      --accent-secondary: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-pink: #ec4899;
+      --accent-gradient: linear-gradient(135deg, #8b5cf6 0%, #3b82f6 50%, #06b6d4 100%);
+      --ai-gradient: linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #3b82f6 100%);
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --card-bg: rgba(23, 20, 42, 0.6);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(139, 92, 246, 0.4);
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+      
+      --shadow-glow: 0 0 25px rgba(139, 92, 246, 0.15);
+      --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="light"] {
+      --bg-gradient: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 50%, #e0e7ff 100%);
+      --surface-bg: rgba(255, 255, 255, 0.7);
+      --surface-border: rgba(0, 0, 0, 0.08);
+      --surface-hover: rgba(255, 255, 255, 0.9);
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --card-border: rgba(0, 0, 0, 0.08);
+      --card-hover-border: rgba(139, 92, 246, 0.5);
+      --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-gradient);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 2rem 1.5rem 4rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1350px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+      background: var(--surface-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--surface-border);
+      padding: 1.25rem 1.75rem;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      background: var(--accent-gradient);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      box-shadow: 0 0 15px rgba(139, 92, 246, 0.4);
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-subtitle {
+      font-size: 0.825rem;
+      color: var(--text-muted);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    /* Search Bar */
+    .search-wrapper {
+      position: relative;
+      min-width: 240px;
+      flex-grow: 1;
+      max-width: 340px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      pointer-events: none;
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-full);
+      padding: 0.65rem 1rem 0.65rem 2.75rem;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .shortcut-hint {
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      background: rgba(255, 255, 255, 0.1);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      pointer-events: none;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 1.1rem;
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: 1px solid var(--surface-border);
+      background: var(--surface-bg);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .btn:hover {
+      background: var(--surface-hover);
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-primary {
+      background: var(--accent-gradient);
+      border: none;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+      transform: translateY(-2px);
+    }
+
+    .btn-ai {
+      background: var(--ai-gradient);
+      border: none;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 4px 18px rgba(236, 72, 153, 0.35);
+    }
+
+    .btn-ai:hover {
+      box-shadow: 0 6px 24px rgba(236, 72, 153, 0.55);
+      transform: translateY(-2px);
+    }
+
+    .btn-icon-only {
+      padding: 0.6rem;
+      border-radius: var(--radius-md);
+    }
+
+    /* Quick Links Bar */
+    .quick-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      padding: 0.85rem 1.25rem;
+      background: rgba(236, 72, 153, 0.08);
+      border: 1px solid rgba(236, 72, 153, 0.2);
+      border-radius: var(--radius-md);
+    }
+
+    .quick-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      color: #f472b6;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    /* Group Container */
+    .group-section {
+      margin-bottom: 2.5rem;
+      background: var(--surface-bg);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      transition: var(--transition);
+    }
+
+    .group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .group-title-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .group-icon {
+      color: var(--accent-cyan);
+    }
+
+    .group-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+
+    .group-count {
+      background: rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-full);
+      font-weight: 600;
+    }
+
+    .group-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      opacity: 0.85;
+    }
+
+    .group-section:hover .group-actions {
+      opacity: 1;
+    }
+
+    .collapse-toggle {
+      transition: transform 0.3s ease;
+    }
+
+    .group-section.collapsed .collapse-toggle {
+      transform: rotate(-90deg);
+    }
+
+    .group-section.collapsed .cards-grid {
+      display: none;
+    }
+
+    /* Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      min-height: 80px;
+      padding: 4px;
+    }
+
+    .cards-grid.drag-over {
+      background: rgba(139, 92, 246, 0.08);
+      border: 2px dashed var(--accent-primary);
+      border-radius: var(--radius-md);
+    }
+
+    /* Gem Card */
+    .gem-card {
+      position: relative;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: var(--transition);
+      box-shadow: var(--shadow-card);
+      cursor: grab;
+      overflow: hidden;
+    }
+
+    .gem-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-gradient);
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .gem-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--card-hover-border);
+      box-shadow: var(--shadow-glow), var(--shadow-card);
+    }
+
+    .gem-card:hover::before {
+      opacity: 1;
+    }
+
+    .gem-card.dragging {
+      opacity: 0.4;
+      cursor: grabbing;
+      border: 2px dashed var(--accent-primary);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .gem-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--surface-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .gem-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      opacity: 0;
+      transition: var(--transition);
+    }
+
+    .gem-card:hover .card-controls {
+      opacity: 1;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      padding: 0.35rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+    }
+
+    .icon-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .star-btn.active {
+      color: #f59e0b;
+      opacity: 1;
+    }
+    
+    .gem-card:not(:hover) .star-btn.active {
+      opacity: 1;
+    }
+
+    .gem-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 0.4rem;
+      line-height: 1.3;
+    }
+
+    .gem-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+      flex-grow: 1;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .chat-btn {
+      width: 100%;
+      justify-content: center;
+      text-decoration: none;
+      background: rgba(139, 92, 246, 0.12);
+      color: #c084fc;
+      border: 1px solid rgba(139, 92, 246, 0.25);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .chat-btn:hover {
+      background: var(--accent-gradient);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+      padding: 1.5rem;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      background: #18142c;
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 580px;
+      padding: 2rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+      transform: translateY(20px);
+      transition: transform 0.3s ease;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: translateY(0);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .form-control {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--surface-border);
+      border-radius: var(--radius-md);
+      padding: 0.7rem 1rem;
+      color: var(--text-main);
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .icon-picker-options {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .icon-opt {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--surface-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .icon-opt:hover, .icon-opt.selected {
+      border-color: var(--accent-primary);
+      background: rgba(139, 92, 246, 0.2);
+    }
+
+    .modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 1.75rem;
+    }
+
+    /* AI Prompt Box & Output */
+    .ai-box {
+      background: rgba(236, 72, 153, 0.06);
+      border: 1px solid rgba(236, 72, 153, 0.25);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .ai-output-box {
+      background: #090714;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-top: 1.25rem;
+      display: none;
+    }
+
+    .ai-output-box.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .instructions-preview {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px dashed var(--surface-border);
+      border-radius: var(--radius-sm);
+      padding: 1rem;
+      font-family: 'Inter', monospace;
+      font-size: 0.825rem;
+      line-height: 1.5;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      max-height: 220px;
+      overflow-y: auto;
+      margin-top: 0.75rem;
+    }
+
+    /* Bookmarklet Box */
+    .bookmarklet-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px dashed var(--accent-primary);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      text-align: center;
+    }
+
+    .bookmarklet-btn {
+      display: inline-block;
+      background: var(--accent-gradient);
+      color: white;
+      font-weight: 700;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--radius-full);
+      text-decoration: none;
+      cursor: move;
+      margin: 0.75rem 0;
+      box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    }
+
+    /* Toast Notification */
+    .toast-container {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .toast {
+      background: #1e1b3a;
+      border: 1px solid var(--accent-primary);
+      color: var(--text-main);
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius-md);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+      animation: slideIn 0.3s ease forwards;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      header { flex-direction: column; align-items: stretch; }
+      .search-wrapper { max-width: 100%; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-logo">
+          <i data-lucide="gem"></i>
+        </div>
+        <div>
+          <h1 class="brand-title">Gemini Gems Hub</h1>
+          <p class="brand-subtitle">O teu painel de controlo e criador assistido por IA</p>
+        </div>
+      </div>
+
+      <div class="search-wrapper">
+        <i data-lucide="search" class="search-icon"></i>
+        <input type="text" id="searchInput" class="search-input" placeholder="Pesquisar Gems ou categorias...">
+        <span class="shortcut-hint">/</span>
+      </div>
+
+      <div class="header-actions">
+        <button class="btn btn-ai" onclick="openAiBuilderModal()">
+          <i data-lucide="sparkles"></i> Criar Gem com IA
+        </button>
+        <button class="btn btn-primary" onclick="openGemModal()">
+          <i data-lucide="plus"></i> Novo Gem
+        </button>
+        <button class="btn" onclick="openSyncModal()">
+          <i data-lucide="refresh-cw"></i> Importar Gems
+        </button>
+        <button class="btn" onclick="openGroupModal()">
+          <i data-lucide="folder-plus"></i> Novo Grupo
+        </button>
+        <button class="btn btn-icon-only" title="Exportar Backup JSON" onclick="exportData()">
+          <i data-lucide="download"></i>
+        </button>
+        <button class="btn btn-icon-only" title="Alternar Tema" onclick="toggleTheme()">
+          <i data-lucide="moon" id="themeIcon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Quick Action Banner -->
+    <div class="quick-bar">
+      <div class="quick-info">
+        <i data-lucide="wand-2"></i>
+        <span>Pede à IA para criar as instruções perfeitas para o teu novo Gem e importa-o diretamente com 1 clique.</span>
+      </div>
+      <div class="quick-actions">
+        <button class="btn btn-sm" onclick="openAiBuilderModal()" style="background: rgba(236, 72, 153, 0.2); color: #f472b6; border-color: rgba(236, 72, 153, 0.4);">
+          <i data-lucide="sparkles"></i> Abrir IA Gem Builder
+        </button>
+        <a href="https://gemini.google.com/gems/view" target="_blank" class="btn btn-sm">
+          <i data-lucide="external-link"></i> Abrir Gemini Gems
+        </a>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main id="dashboardContent">
+      <!-- Generated via JS -->
+    </main>
+  </div>
+
+  <!-- MODAL 1: AI GEM BUILDER (CRIAR GEMS COM IA) -->
+  <div class="modal-overlay" id="aiBuilderModal">
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 36px; height: 36px; background: var(--ai-gradient); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
+            <i data-lucide="sparkles"></i>
+          </div>
+          <h3 class="modal-title">IA Gem Builder — Criador Inteligente</h3>
+        </div>
+        <button class="icon-btn" onclick="closeModal('aiBuilderModal')"><i data-lucide="x"></i></button>
+      </div>
+
+      <div class="ai-box">
+        <div class="form-group">
+          <label class="form-label" style="color: #f472b6; font-weight: 600;">O que pretendes que o teu novo Gem faça?</label>
+          <textarea id="aiPromptInput" class="form-control" style="min-height: 90px;" placeholder="Exemplo: Quero um especialista em marketing digital que analise campanhas, crie headlines persuasivas e dê sugestões de SEO para e-commerce."></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+          <div>
+            <label class="form-label">Estilo / Tom de Voz</label>
+            <select id="aiToneSelect" class="form-control">
+              <option value="profissional">Profissional & Executivo</option>
+              <option value="criativo">Criativo & Persuasivo</option>
+              <option value="analitico">Analítico & Técnico</option>
+              <option value="didatico">Didático & Explicativo</option>
+              <option value="conciso">Direto ao Ponto & Conciso</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Categoria de Destino</label>
+            <select id="aiGroupSelect" class="form-control">
+              <!-- Populated via JS -->
+            </select>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-ai" style="width: 100%; justify-content: center;" onclick="generateGemWithAI()">
+          <i data-lucide="wand-2"></i> ✨ Gerar Instruções & Estrutura do Gem
+        </button>
+      </div>
+
+      <!-- Result Box -->
+      <div id="aiResultBox" class="ai-output-box">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;">
+          <h4 style="font-family: 'Outfit', sans-serif; font-size: 1.1rem; color: #a7f3d0; display: flex; align-items: center; gap: 0.5rem;">
+            <i data-lucide="check-circle-2"></i> Gem Gerado com Sucesso!
+          </h4>
+          <span id="aiSuggestedIcon" style="font-size: 1.5rem;">🤖</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome Sugerido do Gem</label>
+          <input type="text" id="aiResultName" class="form-control" style="font-weight: 600; color: #67e8f9;">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descrição Resumida</label>
+          <input type="text" id="aiResultDesc" class="form-control">
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem;">
+            <label class="form-label">Instruções do Sistema (System Prompt para o Gemini)</label>
+            <button class="btn btn-sm" onclick="copyAiInstructions()" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; background: rgba(139, 92, 246, 0.2); color: #c084fc;">
+              <i data-lucide="copy"></i> Copiar Prompt
+            </button>
+          </div>
+          <div id="aiResultInstructions" class="instructions-preview"></div>
+        </div>
+
+        <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.25); border-radius: var(--radius-md); padding: 1rem; margin-top: 1rem;">
+          <p style="font-size: 0.825rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            💡 <strong>Próximo Passo:</strong> Copia as instruções geradas acima, clica no botão abaixo para abrir o criador oficial do Gemini, cola o prompt lá e obtém o teu link do Gem!
+          </p>
+          
+          <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button type="button" class="btn btn-primary" onclick="copyAndOpenGeminiCreator()" style="flex-grow: 1; justify-content: center;">
+              <i data-lucide="external-link"></i> 1. Copiar & Criar no Google Gemini
+            </button>
+            <button type="button" class="btn btn-ai" onclick="saveAiGemToDashboard()" style="flex-grow: 1; justify-content: center;">
+              <i data-lucide="plus-circle"></i> 2. Adicionar ao Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: ADD/EDIT GEM -->
+  <div class="modal-overlay" id="gemModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="gemModalTitle">Adicionar Novo Gem</h3>
+        <button class="icon-btn" onclick="closeModal('gemModal')"><i data-lucide="x"></i></button>
+      </div>
+      <form id="gemForm" onsubmit="saveGem(event)">
+        <input type="hidden" id="gemId">
+        
+        <div class="form-group">
+          <label class="form-label">Nome do Gem</label>
+          <input type="text" id="gemName" class="form-control" placeholder="ex: Assistente de Código Python" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Link Direto do Gem (ou ID)</label>
+          <input type="url" id="gemUrl" class="form-control" placeholder="https://gemini.google.com/app/gems/..." required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descrição</label>
+          <textarea id="gemDesc" class="form-control" placeholder="O que faz este Gem? Quais os seus pontos fortes?"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Grupo / Categoria</label>
+          <select id="gemGroup" class="form-control">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ícone / Emoji</label>
+          <input type="text" id="gemIcon" class="form-control" placeholder="💻 ou URL da imagem" value="🤖">
+          <div class="icon-picker-options">
+            <span class="icon-opt" onclick="setGemIcon('🤖')">🤖</span>
+            <span class="icon-opt" onclick="setGemIcon('💻')">💻</span>
+            <span class="icon-opt" onclick="setGemIcon('✍️')">✍️</span>
+            <span class="icon-opt" onclick="setGemIcon('📊')">📊</span>
+            <span class="icon-opt" onclick="setGemIcon('🎨')">🎨</span>
+            <span class="icon-opt" onclick="setGemIcon('🧠')">🧠</span>
+            <span class="icon-opt" onclick="setGemIcon('⚡')">⚡</span>
+            <span class="icon-opt" onclick="setGemIcon('🚀')">🚀</span>
+            <span class="icon-opt" onclick="setGemIcon('📢')">📢</span>
+            <span class="icon-opt" onclick="setGemIcon('🔍')">🔍</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('gemModal')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Guardar Gem</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 3: ADD/EDIT GROUP -->
+  <div class="modal-overlay" id="groupModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">Novo Grupo de Gems</h3>
+        <button class="icon-btn" onclick="closeModal('groupModal')"><i data-lucide="x"></i></button>
+      </div>
+      <form onsubmit="saveGroup(event)">
+        <div class="form-group">
+          <label class="form-label">Nome do Grupo</label>
+          <input type="text" id="groupNameInput" class="form-control" placeholder="ex: Produtividade, Programação..." required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ícone do Grupo (Lucide)</label>
+          <input type="text" id="groupIconInput" class="form-control" placeholder="folder, code, cpu, pen-tool, database..." value="folder">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" onclick="closeModal('groupModal')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Criar Grupo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL 4: SYNC / BOOKMARKLET -->
+  <div class="modal-overlay" id="syncModal">
+    <div class="modal-card" style="max-width: 620px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Sincronizar Novos Gems do Gemini</h3>
+        <button class="icon-btn" onclick="closeModal('syncModal')"><i data-lucide="x"></i></button>
+      </div>
+      
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+        Importa os teus Gems criados diretamente no Google Gemini com 1 clique:
+      </p>
+
+      <div class="bookmarklet-box">
+        <h4 style="font-size: 1rem; color: var(--text-main); margin-bottom: 0.4rem;">Método 1: Bookmarklet (1 Clique)</h4>
+        <p style="font-size: 0.825rem; color: var(--text-muted);">Arrasta este botão para a tua barra de favoritos do browser:</p>
+        
+        <a id="bookmarkletLink" class="bookmarklet-btn" href="#">✨ Extrair Meus Gems</a>
+        
+        <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.5rem;">
+          Depois abre <a href="https://gemini.google.com/gems/view" target="_blank" style="color: var(--accent-cyan);">gemini.google.com/gems/view</a> e clica no favorito.
+        </p>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Método 2: Colar JSON de Gems</label>
+        <textarea id="importJsonText" class="form-control" style="min-height: 110px;" placeholder='Cola aqui o JSON copiado pelo Extractor...'></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn" onclick="closeModal('syncModal')">Fechar</button>
+        <button type="button" class="btn btn-primary" onclick="importJsonData()">Importar Dados</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    // --- INITIAL DATA & STORAGE ---
+    const STORAGE_KEY = 'gemini_dashboard_data_v1';
+
+    const defaultState = {
+      theme: 'dark',
+      groups: [
+        { id: 'favorites', name: 'Favoritos', icon: 'star', isFavoriteGroup: true },
+        { id: 'coding', name: 'Programação & Tech', icon: 'code' },
+        { id: 'writing', name: 'Escrita & Criação', icon: 'pen-tool' },
+        { id: 'productivity', name: 'Produtividade & Análise', icon: 'zap' }
+      ],
+      gems: [
+        {
+          id: 'gem_1',
+          name: 'Python Master & Code Reviewer',
+          url: 'https://gemini.google.com/app/gems/view',
+          desc: 'Refatora código Python, deteta bugs, escreve testes unitários e otimiza a arquitetura.',
+          icon: '🐍',
+          groupId: 'coding',
+          favorite: true
+        },
+        {
+          id: 'gem_2',
+          name: 'Redator de Artigos & Posts',
+          url: 'https://gemini.google.com/app/gems/view',
+          desc: 'Especialista em copywriting, artigos técnicos, posts para redes sociais e revisão gramatical.',
+          icon: '✍️',
+          groupId: 'writing',
+          favorite: true
+        },
+        {
+          id: 'gem_3',
+          name: 'Analista de Dados & SQL',
+          url: 'https://gemini.google.com/app/gems/view',
+          desc: 'Gera queries complexas, analisa conjuntos de dados e cria relatórios em markdown.',
+          icon: '📊',
+          groupId: 'productivity',
+          favorite: false
+        },
+        {
+          id: 'gem_4',
+          name: 'UI/UX & Design Consultant',
+          url: 'https://gemini.google.com/app/gems/view',
+          desc: 'Dá sugestões de CSS, acessibilidade, paletas de cores e design de interfaces modernas.',
+          icon: '🎨',
+          groupId: 'coding',
+          favorite: false
+        }
+      ],
+      collapsedGroups: {}
+    };
+
+    let state = loadState();
+
+    function loadState() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error("Erro ao carregar do localStorage", e);
+        }
+      }
+      return defaultState;
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    // --- RENDER ENGINE ---
+    function renderDashboard() {
+      const container = document.getElementById('dashboardContent');
+      const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+      container.innerHTML = '';
+
+      // Populate Groups Dropdowns
+      const optionsHTML = state.groups
+        .filter(g => !g.isFavoriteGroup)
+        .map(g => `<option value="${g.id}">${g.name}</option>`)
+        .join('');
+
+      document.getElementById('gemGroup').innerHTML = optionsHTML;
+      document.getElementById('aiGroupSelect').innerHTML = optionsHTML;
+
+      // Render Favorites Group first
+      const favoriteGems = state.gems.filter(gem => gem.favorite && matchesSearch(gem, searchQuery));
+      const favGroup = state.groups.find(g => g.isFavoriteGroup);
+      if (favGroup && (favoriteGems.length > 0 || !searchQuery)) {
+        container.appendChild(createGroupDOM(favGroup, favoriteGems, true));
+      }
+
+      // Render Regular Groups
+      state.groups.filter(g => !g.isFavoriteGroup).forEach(group => {
+        const groupGems = state.gems.filter(gem => gem.groupId === group.id && matchesSearch(gem, searchQuery));
+        if (groupGems.length > 0 || !searchQuery) {
+          container.appendChild(createGroupDOM(group, groupGems, false));
+        }
+      });
+
+      lucide.createIcons();
+      setupDragAndDrop();
+    }
+
+    function matchesSearch(gem, query) {
+      if (!query) return true;
+      return gem.name.toLowerCase().includes(query) || 
+             gem.desc.toLowerCase().includes(query) ||
+             (gem.icon && gem.icon.toLowerCase().includes(query));
+    }
+
+    function createGroupDOM(group, gems, isFavoriteSection) {
+      const section = document.createElement('div');
+      section.className = `group-section ${state.collapsedGroups[group.id] ? 'collapsed' : ''}`;
+      section.dataset.groupId = group.id;
+
+      const countText = `${gems.length} Gem${gems.length !== 1 ? 's' : ''}`;
+
+      section.innerHTML = `
+        <div class="group-header" onclick="toggleGroupCollapse('${group.id}')">
+          <div class="group-title-wrapper">
+            <i data-lucide="${group.icon || 'folder'}" class="group-icon"></i>
+            <h2 class="group-title">${group.name}</h2>
+            <span class="group-count">${countText}</span>
+          </div>
+          <div class="group-actions" onclick="event.stopPropagation()">
+            ${!isFavoriteSection ? `
+              <button class="icon-btn" title="Editar Nome" onclick="editGroupName('${group.id}')"><i data-lucide="edit-2"></i></button>
+              <button class="icon-btn" title="Eliminar Grupo" onclick="deleteGroup('${group.id}')"><i data-lucide="trash-2"></i></button>
+            ` : ''}
+            <button class="icon-btn collapse-toggle" title="Colapsar/Expandir"><i data-lucide="chevron-down"></i></button>
+          </div>
+        </div>
+        <div class="cards-grid" data-group-id="${group.id}">
+          ${gems.length === 0 ? `<div style="grid-column: 1/-1; color: var(--text-dim); font-size: 0.85rem; padding: 1rem 0; text-align: center; border: 1px dashed var(--surface-border); border-radius: var(--radius-md);">Nenhum Gem neste grupo. Arraste cartões para aqui.</div>` : ''}
+          ${gems.map(gem => createCardHTML(gem)).join('')}
+        </div>
+      `;
+
+      return section;
+    }
+
+    function createCardHTML(gem) {
+      const isUrl = gem.icon && (gem.icon.startsWith('http://') || gem.icon.startsWith('https://') || gem.icon.startsWith('data:'));
+      const avatarHTML = isUrl ? `<img src="${gem.icon}" alt="${gem.name}">` : (gem.icon || '💎');
+
+      return `
+        <div class="gem-card" draggable="true" data-gem-id="${gem.id}" id="card-${gem.id}">
+          <div class="card-top">
+            <div class="gem-avatar">${avatarHTML}</div>
+            <div class="card-controls">
+              <button class="icon-btn star-btn ${gem.favorite ? 'active' : ''}" title="Favorito" onclick="toggleFavorite('${gem.id}')">
+                <i data-lucide="star" style="${gem.favorite ? 'fill: #f59e0b;' : ''}"></i>
+              </button>
+              <button class="icon-btn" title="Editar" onclick="editGem('${gem.id}')">
+                <i data-lucide="edit-3"></i>
+              </button>
+              <button class="icon-btn" title="Eliminar" onclick="deleteGem('${gem.id}')">
+                <i data-lucide="trash"></i>
+              </button>
+            </div>
+          </div>
+          <h3 class="gem-title">${escapeHTML(gem.name)}</h3>
+          <p class="gem-desc">${escapeHTML(gem.desc || 'Sem descrição definida.')}</p>
+          <div class="card-footer">
+            <a href="${escapeHTML(gem.url)}" target="_blank" class="chat-btn">
+              <i data-lucide="message-square"></i> Iniciar Conversa
+            </a>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHTML(str) {
+      return str ? str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      ) : '';
+    }
+
+    // --- DRAG AND DROP (NOTION-LIKE) ---
+    let draggedCardId = null;
+
+    function setupDragAndDrop() {
+      const cards = document.querySelectorAll('.gem-card');
+      const grids = document.querySelectorAll('.cards-grid');
+
+      cards.forEach(card => {
+        card.addEventListener('dragstart', (e) => {
+          draggedCardId = card.dataset.gemId;
+          card.classList.add('dragging');
+          e.dataTransfer.setData('text/plain', draggedCardId);
+        });
+
+        card.addEventListener('dragend', () => {
+          card.classList.remove('dragging');
+          draggedCardId = null;
+          document.querySelectorAll('.cards-grid').forEach(g => g.classList.remove('drag-over'));
+        });
+      });
+
+      grids.forEach(grid => {
+        grid.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          grid.classList.add('drag-over');
+        });
+
+        grid.addEventListener('dragleave', () => {
+          grid.classList.remove('drag-over');
+        });
+
+        grid.addEventListener('drop', (e) => {
+          e.preventDefault();
+          grid.classList.remove('drag-over');
+          const gemId = e.dataTransfer.getData('text/plain') || draggedCardId;
+          const targetGroupId = grid.dataset.groupId;
+
+          if (!gemId || !targetGroupId) return;
+
+          const gem = state.gems.find(g => g.id === gemId);
+          if (gem) {
+            if (targetGroupId === 'favorites') {
+              gem.favorite = true;
+            } else {
+              gem.groupId = targetGroupId;
+            }
+            saveState();
+            renderDashboard();
+            showToast(`Gem "${gem.name}" movido com sucesso!`);
+          }
+        });
+      });
+    }
+
+    // --- IA GEM BUILDER ENGINE ---
+    function openAiBuilderModal() {
+      document.getElementById('aiBuilderModal').classList.add('active');
+    }
+
+    function generateGemWithAI() {
+      const prompt = document.getElementById('aiPromptInput').value.trim();
+      const tone = document.getElementById('aiToneSelect').value;
+      const groupId = document.getElementById('aiGroupSelect').value;
+
+      if (!prompt) {
+        alert('Por favor descreve em algumas palavras o que pretendes que o teu Gem faça.');
+        return;
+      }
+
+      // Intelligent Local AI Generator Engine
+      const toneMap = {
+        profissional: "Usa um tom altamente profissional, objetivo, corporativo e fundamentado.",
+        criativo: "Usa um tom inspirador, perspicaz, com metáforas marcantes e linguagem envolvente.",
+        analitico: "Usa um tom estritamente analítico, baseado em dados, com foco em precisão e detalhes.",
+        didatico: "Usa um tom pedagógico, explicativo, amigável e passo-a-passo com analogias simples.",
+        conciso: "Usa um tom ultra-conciso, direto ao ponto, priorizando listas de tópicos legíveis."
+      };
+
+      // Extract key concept for title
+      let titleConcept = prompt.split('.')[0].substring(0, 45);
+      if (titleConcept.length < 5) titleConcept = prompt.substring(0, 35);
+      
+      // Auto-assign Emoji
+      let emoji = '🤖';
+      const lower = prompt.toLowerCase();
+      if (lower.includes('código') || lower.includes('python') || lower.includes('program') || lower.includes('developer')) emoji = '💻';
+      else if (lower.includes('escrev') || lower.includes('post') || lower.includes('texto') || lower.includes('copy')) emoji = '✍️';
+      else if (lower.includes('dado') || lower.includes('analis') || lower.includes('relatório') || lower.includes('sql')) emoji = '📊';
+      else if (lower.includes('design') || lower.includes('imagem') || lower.includes('ui') || lower.includes('arte')) emoji = '🎨';
+      else if (lower.includes('negócio') || lower.includes('venda') || lower.includes('market')) emoji = '📢';
+      else if (lower.includes('estudo') || lower.includes('aprender') || lower.includes('tutor')) emoji = '🧠';
+
+      const generatedTitle = capitalizeFirst(titleConcept) + " Gem";
+      const generatedDesc = prompt.length > 120 ? prompt.substring(0, 117) + "..." : prompt;
+
+      const systemInstructions = `[PAPEL E OBJETIVO PRINCIPAL]
+Tu és um especialista em ${prompt}. O teu objetivo principal é ajudar o utilizador com respostas de altíssima qualidade, fornecendo soluções estruturadas e práticas.
+
+[TOM DE VOZ E ESTILO]
+- ${toneMap[tone]}
+- Responde no idioma em que o utilizador te contactar (prioridade: Português).
+- Mantém clareza estrutural e usa formatação Markdown clara (títulos, bullet points, blocos de código).
+
+[REGRAS E DIRETRIZES DE ATUAÇÃO]
+1. Analisa cuidadosamente o contexto antes de responder.
+2. Fornece passos práticos e acionáveis em cada resposta.
+3. Se a informação fornecida pelo utilizador for ambígua, faz perguntas de clarificação diretas.
+4. Evita introduções genéricas desnecessárias; entra diretamente na resposta útil.
+
+[FORMATO DE SAÍDA]
+- Começa com um breve resumo executivo da resposta.
+- Desenvolve a solução em secções organizadas com cabeçalhos em Markdown.
+- Conclui com "Próximos Passos Sugeridos" ou conselhos práticos de implementação.`;
+
+      // Fill in UI
+      document.getElementById('aiResultName').value = generatedTitle;
+      document.getElementById('aiResultDesc').value = generatedDesc;
+      document.getElementById('aiResultInstructions').innerText = systemInstructions;
+      document.getElementById('aiSuggestedIcon').innerText = emoji;
+
+      document.getElementById('aiResultBox').classList.add('active');
+      lucide.createIcons();
+    }
+
+    function capitalizeFirst(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function copyAiInstructions() {
+      const text = document.getElementById('aiResultInstructions').innerText;
+      navigator.clipboard.writeText(text);
+      showToast('Instruções copiadas para a área de transferência!');
+    }
+
+    function copyAndOpenGeminiCreator() {
+      copyAiInstructions();
+      window.open('https://gemini.google.com/app', '_blank');
+    }
+
+    function saveAiGemToDashboard() {
+      const name = document.getElementById('aiResultName').value.trim();
+      const desc = document.getElementById('aiResultDesc').value.trim();
+      const icon = document.getElementById('aiSuggestedIcon').innerText;
+      const groupId = document.getElementById('aiGroupSelect').value;
+
+      if (!name) return;
+
+      const newGem = {
+        id: 'gem_' + Date.now(),
+        name,
+        url: 'https://gemini.google.com/app/gems/view',
+        desc,
+        groupId,
+        icon,
+        favorite: false
+      };
+
+      state.gems.push(newGem);
+      saveState();
+      renderDashboard();
+      closeModal('aiBuilderModal');
+      showToast(`Gem "${name}" adicionado ao teu Dashboard!`);
+    }
+
+    // --- OTHER ACTIONS ---
+    function toggleGroupCollapse(groupId) {
+      state.collapsedGroups[groupId] = !state.collapsedGroups[groupId];
+      saveState();
+      renderDashboard();
+    }
+
+    function toggleFavorite(gemId) {
+      const gem = state.gems.find(g => g.id === gemId);
+      if (gem) {
+        gem.favorite = !gem.favorite;
+        saveState();
+        renderDashboard();
+        showToast(gem.favorite ? `Adicionado aos Favoritos` : `Removido dos Favoritos`);
+      }
+    }
+
+    function openGemModal(gemToEdit = null) {
+      const modal = document.getElementById('gemModal');
+      const form = document.getElementById('gemForm');
+      
+      if (gemToEdit) {
+        document.getElementById('gemModalTitle').textContent = 'Editar Gem';
+        document.getElementById('gemId').value = gemToEdit.id;
+        document.getElementById('gemName').value = gemToEdit.name;
+        document.getElementById('gemUrl').value = gemToEdit.url;
+        document.getElementById('gemDesc').value = gemToEdit.desc || '';
+        document.getElementById('gemGroup').value = gemToEdit.groupId || state.groups[1]?.id;
+        document.getElementById('gemIcon').value = gemToEdit.icon || '🤖';
+      } else {
+        document.getElementById('gemModalTitle').textContent = 'Adicionar Novo Gem';
+        form.reset();
+        document.getElementById('gemId').value = '';
+      }
+      
+      modal.classList.add('active');
+    }
+
+    function editGem(gemId) {
+      const gem = state.gems.find(g => g.id === gemId);
+      if (gem) openGemModal(gem);
+    }
+
+    function deleteGem(gemId) {
+      if (confirm('Eliminar este Gem?')) {
+        state.gems = state.gems.filter(g => g.id !== gemId);
+        saveState();
+        renderDashboard();
+        showToast('Gem eliminado.');
+      }
+    }
+
+    function saveGem(e) {
+      e.preventDefault();
+      const id = document.getElementById('gemId').value;
+      const name = document.getElementById('gemName').value.trim();
+      const url = document.getElementById('gemUrl').value.trim();
+      const desc = document.getElementById('gemDesc').value.trim();
+      const groupId = document.getElementById('gemGroup').value;
+      const icon = document.getElementById('gemIcon').value.trim() || '🤖';
+
+      if (!name || !url) return;
+
+      if (id) {
+        const index = state.gems.findIndex(g => g.id === id);
+        if (index !== -1) {
+          state.gems[index] = { ...state.gems[index], name, url, desc, groupId, icon };
+        }
+      } else {
+        const newGem = {
+          id: 'gem_' + Date.now(),
+          name, url, desc,
+          groupId: groupId || state.groups[1]?.id || 'coding',
+          icon, favorite: false
+        };
+        state.gems.push(newGem);
+      }
+
+      saveState();
+      renderDashboard();
+      closeModal('gemModal');
+      showToast(id ? 'Gem atualizado!' : 'Novo Gem adicionado!');
+    }
+
+    function setGemIcon(iconChar) {
+      document.getElementById('gemIcon').value = iconChar;
+    }
+
+    function openGroupModal() {
+      document.getElementById('groupModal').classList.add('active');
+    }
+
+    function saveGroup(e) {
+      e.preventDefault();
+      const name = document.getElementById('groupNameInput').value.trim();
+      const icon = document.getElementById('groupIconInput').value.trim() || 'folder';
+      if (!name) return;
+
+      state.groups.push({ id: 'group_' + Date.now(), name, icon });
+      saveState();
+      renderDashboard();
+      closeModal('groupModal');
+      showToast(`Grupo "${name}" criado!`);
+    }
+
+    function editGroupName(groupId) {
+      const group = state.groups.find(g => g.id === groupId);
+      if (!group) return;
+      const newName = prompt('Novo nome do grupo:', group.name);
+      if (newName && newName.trim()) {
+        group.name = newName.trim();
+        saveState();
+        renderDashboard();
+      }
+    }
+
+    function deleteGroup(groupId) {
+      const group = state.groups.find(g => g.id === groupId);
+      if (!group) return;
+      if (confirm(`Eliminar o grupo "${group.name}"?`)) {
+        state.groups = state.groups.filter(g => g.id !== groupId);
+        const fallbackGroup = state.groups.find(g => !g.isFavoriteGroup)?.id || 'coding';
+        state.gems.forEach(gem => { if (gem.groupId === groupId) gem.groupId = fallbackGroup; });
+        saveState();
+        renderDashboard();
+        showToast('Grupo eliminado.');
+      }
+    }
+
+    // --- BOOKMARKLET & SYNC ---
+    function generateBookmarklet() {
+      const code = `javascript:(function(){
+        try {
+          const cards = document.querySelectorAll('a[href*="/app/gems/"], a[href*="/gems/"]');
+          const gems = [];
+          cards.forEach((card, i) => {
+            const href = card.href;
+            const nameEl = card.querySelector('div, span, h3');
+            const name = nameEl ? nameEl.innerText.split('\\n')[0] : 'Gem ' + (i+1);
+            const descEl = card.querySelector('p');
+            const desc = descEl ? descEl.innerText : '';
+            if(href) gems.push({ name, url: href, desc, icon: '💎', groupId: 'coding' });
+          });
+          const json = JSON.stringify(gems, null, 2);
+          navigator.clipboard.writeText(json);
+          alert('✨ ' + gems.length + ' Gems copiados! Cola agora no teu Dashboard.');
+        } catch(e) { alert('Erro: ' + e.message); }
+      })();`;
+
+      const link = document.getElementById('bookmarkletLink');
+      if (link) link.href = code.replace(/\n\s+/g, '');
+    }
+
+    function openSyncModal() {
+      generateBookmarklet();
+      document.getElementById('syncModal').classList.add('active');
+    }
+
+    function importJsonData() {
+      const raw = document.getElementById('importJsonText').value.trim();
+      if (!raw) return;
+
+      try {
+        const parsed = JSON.parse(raw);
+        let importedCount = 0;
+
+        if (Array.isArray(parsed)) {
+          parsed.forEach(item => {
+            if (item.name && item.url) {
+              state.gems.push({
+                id: 'gem_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+                name: item.name,
+                url: item.url,
+                desc: item.desc || '',
+                icon: item.icon || '💎',
+                groupId: state.groups[1]?.id || 'coding',
+                favorite: false
+              });
+              importedCount++;
+            }
+          });
+        }
+
+        saveState();
+        renderDashboard();
+        closeModal('syncModal');
+        showToast(`Importados ${importedCount} Gems!`);
+      } catch (e) {
+        alert('JSON inválido. Verifica o texto.');
+      }
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `gemini_gems_dashboard_backup.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Backup exportado!');
+    }
+
+    function closeModal(modalId) {
+      document.getElementById(modalId).classList.remove('active');
+    }
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<i data-lucide="check-circle" style="color: #34d399;"></i> <span>${escapeHTML(msg)}</span>`;
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(100%)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme') || 'dark';
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      state.theme = next;
+      saveState();
+
+      const icon = document.getElementById('themeIcon');
+      if (icon) {
+        icon.setAttribute('data-lucide', next === 'dark' ? 'moon' : 'sun');
+        lucide.createIcons();
+      }
+    }
+
+    document.getElementById('searchInput').addEventListener('input', renderDashboard);
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+      }
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+      }
+    });
+
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.classList.remove('active');
+      });
+    });
+
+    if (state.theme) {
+      document.documentElement.setAttribute('data-theme', state.theme);
+    }
+    renderDashboard();
+  </script>
+</body>
+</html>
