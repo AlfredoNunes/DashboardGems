@@ -701,10 +701,19 @@
       </div>
     </div>
 
-    <div style="padding: 10px; border-top: 1px solid var(--border-subtle);">
+    <div style="padding: 10px; border-top: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 6px;">
       <button class="btn btn-primary" onclick="openAiBuilderModal()" style="width: 100%; justify-content: center;">
         <i data-lucide="sparkles" style="width: 14px;"></i> Criar Gem com IA
       </button>
+      <div style="display: flex; gap: 4px;">
+        <button class="btn" onclick="exportBackup()" style="flex: 1; font-size: 11px; padding: 4px; justify-content: center; box-shadow: none;" title="Exportar cópia de segurança (JSON)">
+          <i data-lucide="download" style="width: 11px;"></i> Exportar
+        </button>
+        <button class="btn" onclick="triggerImportBackup()" style="flex: 1; font-size: 11px; padding: 4px; justify-content: center; box-shadow: none;" title="Importar cópia de segurança (JSON)">
+          <i data-lucide="upload" style="width: 11px;"></i> Importar
+        </button>
+      </div>
+      <input type="file" id="backupFileInput" style="display: none;" accept=".json" onchange="importBackup(event)">
     </div>
   </aside>
 
@@ -1600,6 +1609,46 @@ Tu és um especialista em ${prompt}. O teu objetivo principal é fornecer soluç
         var map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' };
         return map[tag] || tag;
       });
+    }
+
+    // --- BACKUP & RESTORE UTILITIES ---
+    function exportBackup() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "gemini_gems_backup.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+      showToast('Cópia de segurança exportada!');
+    }
+
+    function triggerImportBackup() {
+      document.getElementById('backupFileInput').click();
+    }
+
+    function importBackup(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const parsed = JSON.parse(evt.target.result);
+          if (parsed && Array.isArray(parsed.groups) && Array.isArray(parsed.gems)) {
+            state = parsed;
+            saveState();
+            renderApp();
+            showToast('Cópia de segurança importada!');
+          } else {
+            showToast('Erro: Ficheiro inválido.');
+          }
+        } catch (err) {
+          showToast('Erro ao ler o ficheiro.');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
     }
 
     document.getElementById('searchInput').addEventListener('input', renderApp);
