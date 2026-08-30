@@ -1173,50 +1173,175 @@
       const container = document.createElement('div');
       container.className = 'board-container';
 
-      let columns = state.groups;
-      if (state.currentCategory !== 'all') {
-        columns = state.groups.filter(g => g.id === state.currentCategory || (state.currentCategory === 'favorites' && gems.some(gem => gem.groupId === g.id)));
-      }
+      if (state.currentCategory === 'all') {
+        // --- 2-PANE WORKSPACE VIEW ---
+        // 1. Left Pane: Novos Gems + Favoritos stacked vertically
+        const leftPane = document.createElement('div');
+        leftPane.className = 'board-left-pane';
+        leftPane.style.width = '280px';
+        leftPane.style.flexShrink = '0';
+        leftPane.style.display = 'flex';
+        leftPane.style.flexDirection = 'column';
+        leftPane.style.gap = '20px';
 
-      columns.forEach(group => {
-        const colGems = gems.filter(g => g.groupId === group.id);
-        const isNewGroup = group.id === 'new_gems';
-        const isCollapsed = state.collapsedGroups && state.collapsedGroups[group.id];
+        // 1.1 Novos Gems Column
+        const newGroup = state.groups.find(g => g.id === 'new_gems') || { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true };
+        const newColGems = gems.filter(g => g.groupId === newGroup.id);
+        const isCollapsedNew = state.collapsedGroups && state.collapsedGroups[newGroup.id];
 
-        const colDOM = document.createElement('div');
-        colDOM.className = `board-column ${isNewGroup ? 'is-new-column' : ''} ${isCollapsed ? 'collapsed-vertical' : ''}`;
-        colDOM.setAttribute('draggable', 'true');
-        colDOM.setAttribute('data-column-group-id', group.id);
-        
-        colDOM.innerHTML = `
-          <div class="column-header" style="cursor: grab; display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsed ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsed ? '0' : '10px'};">
-            <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('${group.id}')">
-              <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="${isCollapsed ? 'Expandir Grupo' : 'Colapsar Grupo'}">
-                <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 13px; height: 13px;"></i>
+        const newColDOM = document.createElement('div');
+        newColDOM.className = `board-column is-new-column ${isCollapsedNew ? 'collapsed-vertical' : ''}`;
+        newColDOM.setAttribute('draggable', 'false'); // Left pane columns are statically positioned
+        newColDOM.setAttribute('data-column-group-id', newGroup.id);
+        newColDOM.innerHTML = `
+          <div class="column-header" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsedNew ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsedNew ? '0' : '10px'};">
+            <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('${newGroup.id}')">
+              <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="${isCollapsedNew ? 'Expandir Grupo' : 'Colapsar Grupo'}">
+                <i data-lucide="${isCollapsedNew ? 'chevron-right' : 'chevron-down'}" style="width: 13px; height: 13px;"></i>
               </button>
-              <i data-lucide="${group.icon || 'folder'}" style="width: 14px; ${isNewGroup ? 'color: var(--accent-new);' : ''}"></i>
-              <span style="font-weight: 600;">${escapeHTML(group.name)}</span>
+              <i data-lucide="${newGroup.icon || 'inbox'}" style="width: 14px; color: var(--accent-new);"></i>
+              <span style="font-weight: 600;">${escapeHTML(newGroup.name)}</span>
             </div>
             <div class="column-header-actions">
-              <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
+              <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${newColGems.length}</span>
               <div class="column-action-buttons">
-                <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${group.id}')" title="Editar Grupo">
+                <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${newGroup.id}')" title="Editar Grupo">
                   <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
                 </button>
-                ${!isNewGroup ? `
-                <button class="header-action-btn" onclick="event.stopPropagation(); deleteGroup('${group.id}')" title="Eliminar Grupo">
-                  <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
-                </button>` : ''}
               </div>
             </div>
           </div>
-          <div class="column-cards" data-group-id="${group.id}" style="${isCollapsed ? 'display: none;' : ''}">
-            ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
-            ${colGems.map(gem => createCardHTML(gem)).join('')}
+          <div class="column-cards" data-group-id="${newGroup.id}" style="${isCollapsedNew ? 'display: none;' : ''}">
+            ${newColGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems novos.</div>` : ''}
+            ${newColGems.map(gem => createCardHTML(gem)).join('')}
           </div>
         `;
-        container.appendChild(colDOM);
-      });
+        leftPane.appendChild(newColDOM);
+
+        // 1.2 Favoritos Column
+        const favGems = gems.filter(g => g.favorite);
+        const isCollapsedFav = state.collapsedGroups && state.collapsedGroups['special_favorites'];
+
+        const favColDOM = document.createElement('div');
+        favColDOM.className = `board-column ${isCollapsedFav ? 'collapsed-vertical' : ''}`;
+        favColDOM.setAttribute('data-column-group-id', 'special_favorites');
+        favColDOM.innerHTML = `
+          <div class="column-header" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsedFav ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsedFav ? '0' : '10px'};">
+            <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('special_favorites')">
+              <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="${isCollapsedFav ? 'Expandir Grupo' : 'Colapsar Grupo'}">
+                <i data-lucide="${isCollapsedFav ? 'chevron-right' : 'chevron-down'}" style="width: 13px; height: 13px;"></i>
+              </button>
+              <i data-lucide="star" style="width: 14px; color: #f59e0b; fill: #f59e0b;"></i>
+              <span style="font-weight: 600;">Favoritos</span>
+            </div>
+            <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${favGems.length}</span>
+          </div>
+          <div class="column-cards" data-group-id="favorites" style="${isCollapsedFav ? 'display: none;' : ''}">
+            ${favGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Arrasta Gems para aqui para marcar como favorito.</div>` : ''}
+            ${favGems.map(gem => createCardHTML(gem)).join('')}
+          </div>
+        `;
+        leftPane.appendChild(favColDOM);
+        container.appendChild(leftPane);
+
+        // 2. Right Pane: Other Group columns arranged in flex-wrap row
+        const rightPane = document.createElement('div');
+        rightPane.className = 'board-right-pane';
+        rightPane.style.flexGrow = '1';
+        rightPane.style.display = 'flex';
+        rightPane.style.flexWrap = 'wrap';
+        rightPane.style.gap = '20px';
+        rightPane.style.alignItems = 'flex-start';
+
+        const otherGroups = state.groups.filter(g => g.id !== 'new_gems');
+        otherGroups.forEach(group => {
+          const colGems = gems.filter(g => g.groupId === group.id);
+          const isCollapsed = state.collapsedGroups && state.collapsedGroups[group.id];
+
+          const colDOM = document.createElement('div');
+          colDOM.className = `board-column ${isCollapsed ? 'collapsed-vertical' : ''}`;
+          colDOM.setAttribute('draggable', 'true');
+          colDOM.setAttribute('data-column-group-id', group.id);
+
+          colDOM.innerHTML = `
+            <div class="column-header" style="cursor: grab; display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsed ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsed ? '0' : '10px'};">
+              <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('${group.id}')">
+                <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="${isCollapsed ? 'Expandir Grupo' : 'Colapsar Grupo'}">
+                  <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 13px; height: 13px;"></i>
+                </button>
+                <i data-lucide="${group.icon || 'folder'}" style="width: 14px;"></i>
+                <span style="font-weight: 600;">${escapeHTML(group.name)}</span>
+              </div>
+              <div class="column-header-actions">
+                <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
+                <div class="column-action-buttons">
+                  <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${group.id}')" title="Editar Grupo">
+                    <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
+                  </button>
+                  <button class="header-action-btn" onclick="event.stopPropagation(); deleteGroup('${group.id}')" title="Eliminar Grupo">
+                    <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div class="column-cards" data-group-id="${group.id}" style="${isCollapsed ? 'display: none;' : ''}">
+              ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
+              ${colGems.map(gem => createCardHTML(gem)).join('')}
+            </div>
+          `;
+          rightPane.appendChild(colDOM);
+        });
+        container.appendChild(rightPane);
+
+      } else {
+        // --- SINGLE CATEGORY VIEW ---
+        // Render just the active group (or active category folder)
+        let activeGroup = state.groups.find(g => g.id === state.currentCategory);
+        let colGems = [];
+        let isSpecialFav = state.currentCategory === 'favorites';
+
+        if (isSpecialFav) {
+          activeGroup = { id: 'favorites', name: 'Favoritos', icon: 'star' };
+          colGems = gems.filter(g => g.favorite);
+        } else if (activeGroup) {
+          colGems = gems.filter(g => g.groupId === activeGroup.id);
+        }
+
+        if (activeGroup) {
+          const isCollapsed = state.collapsedGroups && state.collapsedGroups[activeGroup.id];
+          const isNew = activeGroup.id === 'new_gems';
+
+          const colDOM = document.createElement('div');
+          colDOM.className = `board-column ${isNew ? 'is-new-column' : ''} ${isCollapsed ? 'collapsed-vertical' : ''}`;
+          colDOM.style.width = '320px'; // Give it a bit more width since it's alone
+          
+          colDOM.innerHTML = `
+            <div class="column-header" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsed ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsed ? '0' : '10px'};">
+              <div class="column-title" style="cursor: pointer; display: flex; align-items: center; gap: 6px; user-select: none;" onclick="toggleGroupCollapse('${activeGroup.id}')">
+                <button class="header-action-btn" style="padding: 0; box-shadow: none;" title="${isCollapsed ? 'Expandir Grupo' : 'Colapsar Grupo'}">
+                  <i data-lucide="${isCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 13px; height: 13px;"></i>
+                </button>
+                <i data-lucide="${activeGroup.icon || 'folder'}" style="width: 14px; ${isNew ? 'color: var(--accent-new);' : ''}"></i>
+                <span style="font-weight: 600;">${escapeHTML(activeGroup.name)}</span>
+              </div>
+              <div class="column-header-actions">
+                <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
+                ${!isSpecialFav ? `
+                <div class="column-action-buttons">
+                  <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${activeGroup.id}')" title="Editar Grupo">
+                    <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
+                  </button>
+                </div>` : ''}
+              </div>
+            </div>
+            <div class="column-cards" data-group-id="${activeGroup.id}" style="${isCollapsed ? 'display: none;' : ''}">
+              ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
+              ${colGems.map(gem => createCardHTML(gem)).join('')}
+            </div>
+          `;
+          container.appendChild(colDOM);
+        }
+      }
 
       return container;
     }
@@ -1553,19 +1678,33 @@
 
           const gem = state.gems.find(g => g.id === gemId);
           if (gem) {
-            gem.groupId = targetGroupId;
+            if (targetGroupId === 'favorites') {
+              gem.favorite = true;
+              showToast(`"${gem.name}" marcado como favorito!`);
+            } else {
+              gem.groupId = targetGroupId;
+              showToast(`Gem organizado para "${state.groups.find(g => g.id === targetGroupId)?.name || 'Novos Gems'}"`);
+            }
             saveState();
             renderApp();
-            showToast(`Gem organizado para "${state.groups.find(g => g.id === targetGroupId)?.name}"`);
           }
         });
       });
 
       // Column Drag & Drop (Group Reordering)
       columnsDOM.forEach(col => {
+        const colId = col.dataset.columnGroupId;
+        // Disable column drag and reordering for the fixed left pane columns
+        if (colId === 'new_gems' || colId === 'special_favorites') {
+          col.setAttribute('draggable', 'false');
+          const header = col.querySelector('.column-header');
+          if (header) header.style.cursor = 'default';
+          return;
+        }
+
         col.addEventListener('dragstart', (e) => {
           if (e.target.classList.contains('board-column')) {
-            draggedColumnId = col.dataset.columnGroupId;
+            draggedColumnId = colId;
             col.classList.add('dragging-column');
             e.dataTransfer.setData('text/column-id', draggedColumnId);
           }
@@ -1579,7 +1718,8 @@
 
         col.addEventListener('dragover', (e) => {
           e.preventDefault();
-          if (draggedColumnId && draggedColumnId !== col.dataset.columnGroupId) {
+          // Only allow dragging columns over other custom columns (in the right pane)
+          if (draggedColumnId && draggedColumnId !== colId && colId !== 'new_gems' && colId !== 'special_favorites') {
             col.classList.add('drag-column-over');
           }
         });
@@ -1592,11 +1732,11 @@
           e.preventDefault();
           col.classList.remove('drag-column-over');
 
-          const colId = e.dataTransfer.getData('text/column-id') || draggedColumnId;
-          const targetColId = col.dataset.columnGroupId;
+          const colIdDragged = e.dataTransfer.getData('text/column-id') || draggedColumnId;
+          const targetColId = colId;
 
-          if (colId && targetColId && colId !== targetColId) {
-            const fromIndex = state.groups.findIndex(g => g.id === colId);
+          if (colIdDragged && targetColId && colIdDragged !== targetColId && targetColId !== 'new_gems' && targetColId !== 'special_favorites') {
+            const fromIndex = state.groups.findIndex(g => g.id === colIdDragged);
             const toIndex = state.groups.findIndex(g => g.id === targetColId);
             if (fromIndex !== -1 && toIndex !== -1) {
               const temp = state.groups[fromIndex];
