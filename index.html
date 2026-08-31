@@ -230,6 +230,95 @@
       text-transform: uppercase;
     }
 
+    /* Sidebar Tree View */
+    .tree-node {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tree-item-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      transition: background 0.1s ease, color 0.1s ease;
+      user-select: none;
+      min-height: 28px;
+    }
+
+    .tree-item-row:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .tree-item-row.active {
+      background: var(--bg-active);
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .tree-item-left {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-grow: 1;
+    }
+
+    .tree-toggle-btn {
+      padding: 1px;
+      border: none;
+      background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 2px;
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .tree-toggle-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
+    .tree-toggle-placeholder {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+    }
+
+    .tree-children {
+      margin-left: 11px;
+      padding-left: 6px;
+      border-left: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .tree-children.collapsed {
+      display: none;
+    }
+
+    .tree-item-row:hover .group-action-buttons {
+      display: flex;
+    }
+
+    .tree-item-row:hover .menu-item-count {
+      display: none;
+    }
+
     /* Main Area */
     .app-main {
       flex-grow: 1;
@@ -552,6 +641,83 @@
       background: var(--accent-subtle);
       border: 1px dashed var(--accent);
       border-radius: var(--radius-sm);
+    }
+
+    /* Board Subgroups */
+    .board-subgroups-container {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .board-subgroup-box {
+      background: var(--bg-hover);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      transition: border-color 0.15s ease;
+    }
+
+    .board-subgroup-box:hover {
+      border-color: var(--border-color);
+    }
+
+    .board-subgroup-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 6px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .board-subgroup-header.collapsed-header {
+      padding-bottom: 0;
+      margin-bottom: 0;
+      border-bottom: none;
+    }
+
+    .board-subgroup-title {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .board-subgroup-cards {
+      min-height: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 2px 0;
+    }
+
+    .board-subgroup-cards.drag-over {
+      background: var(--accent-subtle);
+      border: 1px dashed var(--accent);
+      border-radius: var(--radius-sm);
+    }
+
+    .group-path-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border-subtle);
+      padding: 2px 6px;
+      border-radius: 4px;
     }
 
     .notion-card {
@@ -1006,7 +1172,13 @@
         <input type="hidden" id="groupIdInput">
         <div class="form-group">
           <label class="form-label">Nome do Grupo</label>
-          <input type="text" id="groupNameInput" class="form-control" required placeholder="ex: Marketing, Finanças...">
+          <input type="text" id="groupNameInput" class="form-control" required placeholder="ex: Marketing, Frontend...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Grupo Pai (Opcional - para criar Subgrupo)</label>
+          <select id="groupParentInput" class="form-control">
+            <option value="">Nenhum (Grupo Principal)</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Ícone Lucide</label>
@@ -1097,10 +1269,10 @@
       currentCategory: 'all',
       currentView: 'board',
       groups: [
-        { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true, columnId: 0, position: 0 },
-        { id: 'coding', name: 'Programação & Tech', icon: 'code', columnId: 1, position: 0 },
-        { id: 'writing', name: 'Escrita & Redação', icon: 'pen-tool', columnId: 2, position: 0 },
-        { id: 'productivity', name: 'Produtividade & Análise', icon: 'zap', columnId: 3, position: 0 }
+        { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true, parentId: null, columnId: 0, position: 0 },
+        { id: 'coding', name: 'Programação & Tech', icon: 'code', parentId: null, columnId: 1, position: 0 },
+        { id: 'writing', name: 'Escrita & Redação', icon: 'pen-tool', parentId: null, columnId: 2, position: 0 },
+        { id: 'productivity', name: 'Produtividade & Análise', icon: 'zap', parentId: null, columnId: 3, position: 0 }
       ],
       gems: []
     };
@@ -1113,20 +1285,26 @@
         try {
           const parsed = JSON.parse(saved);
           if (!parsed.groups.some(g => g.id === 'new_gems')) {
-            parsed.groups.unshift({ id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true, columnId: 0, position: 0 });
+            parsed.groups.unshift({ id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true, parentId: null, columnId: 0, position: 0 });
           }
           if (!parsed.collapsedGroups) {
             parsed.collapsedGroups = {};
           }
+          if (!parsed.collapsedTree) {
+            parsed.collapsedTree = {};
+          }
           
-          // Migração: Garante que todos os grupos têm track e posição definidos
+          // Migração: Garante parentId, columnId e position
           parsed.groups.forEach((g, idx) => {
-            if (g.columnId === undefined) {
+            if (g.parentId === undefined) {
+              g.parentId = null;
+            }
+            if (g.columnId === undefined && !g.parentId) {
               if (g.id === 'new_gems') {
                 g.columnId = 0;
                 g.position = 0;
               } else {
-                g.columnId = 1 + ((idx - 1) % 3); // Distribui por colunas 1, 2 e 3
+                g.columnId = 1 + ((idx - 1) % 3);
                 g.position = Math.floor((idx - 1) / 3);
               }
             }
@@ -1136,11 +1314,78 @@
       }
       const clonedDefault = JSON.parse(JSON.stringify(defaultState));
       clonedDefault.collapsedGroups = {};
+      clonedDefault.collapsedTree = {};
       return clonedDefault;
     }
 
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    // --- HIERARCHY / TREE HELPERS ---
+    function getGroupChildren(parentId) {
+      return state.groups.filter(g => g.parentId === parentId);
+    }
+
+    function getAllDescendantGroupIds(groupId) {
+      let ids = [];
+      const children = getGroupChildren(groupId);
+      children.forEach(child => {
+        ids.push(child.id);
+        ids = ids.concat(getAllDescendantGroupIds(child.id));
+      });
+      return ids;
+    }
+
+    function getGroupHierarchyPath(groupId) {
+      const group = state.groups.find(g => g.id === groupId);
+      if (!group) return '';
+      if (!group.parentId) return group.name;
+      return getGroupHierarchyPath(group.parentId) + ' › ' + group.name;
+    }
+
+    function getGroupTotalGemCount(groupId) {
+      const allIds = [groupId, ...getAllDescendantGroupIds(groupId)];
+      return state.gems.filter(g => allIds.includes(g.groupId)).length;
+    }
+
+    function toggleTreeCollapse(groupId) {
+      if (!state.collapsedTree) state.collapsedTree = {};
+      state.collapsedTree[groupId] = !state.collapsedTree[groupId];
+      saveState();
+      renderApp();
+    }
+
+    function buildHierarchicalSelectOptions(selectedId = '', excludeId = null) {
+      let html = '';
+      function renderOptions(parentId = null, level = 0) {
+        const children = state.groups.filter(g => g.parentId === parentId);
+        children.forEach(g => {
+          if (excludeId && (g.id === excludeId || getAllDescendantGroupIds(excludeId).includes(g.id))) return;
+          const indent = '&nbsp;&nbsp;'.repeat(level) + (level > 0 ? '└── ' : '');
+          const isSelected = g.id === selectedId ? 'selected' : '';
+          html += `<option value="${g.id}" ${isSelected}>${indent}${escapeHTML(g.name)}</option>`;
+          renderOptions(g.id, level + 1);
+        });
+      }
+      renderOptions(null, 0);
+      return html;
+    }
+
+    function buildParentGroupOptions(selectedParentId = '', excludeGroupId = null) {
+      let html = '<option value="">Nenhum (Grupo Principal)</option>';
+      function renderOptions(parentId = null, level = 0) {
+        const children = state.groups.filter(g => g.id !== 'new_gems' && g.parentId === parentId);
+        children.forEach(g => {
+          if (excludeGroupId && (g.id === excludeGroupId || getAllDescendantGroupIds(excludeGroupId).includes(g.id))) return;
+          const indent = '&nbsp;&nbsp;'.repeat(level) + (level > 0 ? '└── ' : '');
+          const isSelected = g.id === selectedParentId ? 'selected' : '';
+          html += `<option value="${g.id}" ${isSelected}>${indent}${escapeHTML(g.name)}</option>`;
+          renderOptions(g.id, level + 1);
+        });
+      }
+      renderOptions(null, 0);
+      return html;
     }
 
     // Auto-check for newly synced gems from localStorage shared channel & extension cache
@@ -1156,7 +1401,6 @@
         }
       } catch (e) {}
 
-      // Automatically query Chrome Extension cache
       window.postMessage({ type: 'REQUEST_GEMINI_DIRECT_FETCH' }, '*');
     }
 
@@ -1167,55 +1411,81 @@
       document.getElementById('countFavorites').innerText = state.gems.filter(g => g.favorite).length;
       document.getElementById('countNewGems').innerText = newGemsCount;
 
-      // Sidebar Groups
-      const regularGroups = state.groups.filter(g => g.id !== 'new_gems');
+      // Sidebar Groups Tree
+      const rootGroups = state.groups.filter(g => g.id !== 'new_gems' && !g.parentId);
       const sidebarGroupsList = document.getElementById('sidebarGroupsList');
-      sidebarGroupsList.innerHTML = regularGroups.map(group => {
-        const count = state.gems.filter(g => g.groupId === group.id).length;
+      
+      function renderSidebarTreeNode(group, level = 0) {
+        const children = getGroupChildren(group.id);
+        const hasChildren = children.length > 0;
+        const isTreeCollapsed = state.collapsedTree && state.collapsedTree[group.id];
         const isActive = state.currentCategory === group.id;
+        const totalCount = getGroupTotalGemCount(group.id);
+
         return `
-          <div class="menu-item ${isActive ? 'active' : ''}" onclick="switchCategory('${group.id}')">
-            <div class="menu-item-left">
-              <i data-lucide="${group.icon || 'folder'}" style="width: 14px;"></i>
-              <span>${escapeHTML(group.name)}</span>
-            </div>
-            <div class="group-item-actions">
-              <span class="menu-item-count">${count}</span>
-              <div class="group-action-buttons">
-                <button class="sidebar-action-btn" onclick="event.stopPropagation(); editGroup('${group.id}')" title="Editar Grupo">
-                  <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
-                </button>
-                <button class="sidebar-action-btn" onclick="event.stopPropagation(); deleteGroup('${group.id}')" title="Eliminar Grupo">
-                  <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
-                </button>
+          <div class="tree-node">
+            <div class="tree-item-row ${isActive ? 'active' : ''}" onclick="switchCategory('${group.id}')">
+              <div class="tree-item-left">
+                ${hasChildren ? `
+                  <button class="tree-toggle-btn" onclick="event.stopPropagation(); toggleTreeCollapse('${group.id}')" title="${isTreeCollapsed ? 'Expandir' : 'Colapsar'}">
+                    <i data-lucide="${isTreeCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 12px; height: 12px;"></i>
+                  </button>
+                ` : `<span class="tree-toggle-placeholder"></span>`}
+                <i data-lucide="${group.icon || 'folder'}" style="width: 14px; flex-shrink: 0;"></i>
+                <span title="${escapeHTML(group.name)}">${escapeHTML(group.name)}</span>
+              </div>
+              <div class="group-item-actions">
+                <span class="menu-item-count">${totalCount}</span>
+                <div class="group-action-buttons">
+                  <button class="sidebar-action-btn" onclick="event.stopPropagation(); openGroupModal(null, '${group.id}')" title="Adicionar Subgrupo">
+                    <i data-lucide="plus" style="width: 11px; height: 11px;"></i>
+                  </button>
+                  <button class="sidebar-action-btn" onclick="event.stopPropagation(); editGroup('${group.id}')" title="Editar Grupo">
+                    <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
+                  </button>
+                  <button class="sidebar-action-btn" onclick="event.stopPropagation(); deleteGroup('${group.id}')" title="Eliminar Grupo">
+                    <i data-lucide="trash" style="width: 11px; height: 11px;"></i>
+                  </button>
+                </div>
               </div>
             </div>
+            ${hasChildren ? `
+              <div class="tree-children ${isTreeCollapsed ? 'collapsed' : ''}">
+                ${children.map(child => renderSidebarTreeNode(child, level + 1)).join('')}
+              </div>
+            ` : ''}
           </div>
         `;
-      }).join('');
+      }
+
+      sidebarGroupsList.innerHTML = rootGroups.map(group => renderSidebarTreeNode(group, 0)).join('');
 
       // Populate Select Options
-      const groupOptions = state.groups.map(g => `<option value="${g.id}">${escapeHTML(g.name)}</option>`).join('');
+      const groupOptions = buildHierarchicalSelectOptions();
       document.getElementById('gemGroup').innerHTML = groupOptions;
       document.getElementById('aiGroupSelect').innerHTML = groupOptions;
 
-      // Main Header Title
+      // Main Header Title & Breadcrumb
       let title = 'Todos os Gems';
       if (state.currentCategory === 'favorites') title = 'Favoritos';
       else if (state.currentCategory === 'new_gems') title = '📥 Novos Gems (A Organizar)';
       else if (state.currentCategory !== 'all') {
-        const grp = state.groups.find(g => g.id === state.currentCategory);
-        if (grp) title = grp.name;
+        title = getGroupHierarchyPath(state.currentCategory) || 'Grupo';
       }
       document.getElementById('pageTitleText').innerText = title;
       document.getElementById('currentViewName').innerText = title;
 
       // Render View (Board or Table)
       const searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+      const activeDescendantIds = state.currentCategory !== 'all' && state.currentCategory !== 'favorites' && state.currentCategory !== 'new_gems'
+        ? [state.currentCategory, ...getAllDescendantGroupIds(state.currentCategory)]
+        : [];
+
       const filteredGems = state.gems.filter(gem => {
         const matchesCategory = state.currentCategory === 'all' || 
                                 (state.currentCategory === 'favorites' && gem.favorite) ||
-                                (gem.groupId === state.currentCategory);
+                                (state.currentCategory === 'new_gems' && gem.groupId === 'new_gems') ||
+                                (activeDescendantIds.includes(gem.groupId));
         const matchesQuery = !searchQuery || gem.name.toLowerCase().includes(searchQuery) || gem.desc.toLowerCase().includes(searchQuery);
         return matchesCategory && matchesQuery;
       });
@@ -1244,13 +1514,13 @@
         leftPane.className = 'board-left-pane';
 
         // 1.1 Novos Gems Column
-        const newGroup = state.groups.find(g => g.id === 'new_gems') || { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true, columnId: 0, position: 0 };
+        const newGroup = state.groups.find(g => g.id === 'new_gems') || { id: 'new_gems', name: '📥 Novos Gems', icon: 'inbox', isNewGroup: true, parentId: null, columnId: 0, position: 0 };
         const newColGems = gems.filter(g => g.groupId === newGroup.id);
         const isCollapsedNew = state.collapsedGroups && state.collapsedGroups[newGroup.id];
 
         const newColDOM = document.createElement('div');
         newColDOM.className = `board-column is-new-column ${isCollapsedNew ? 'collapsed-vertical' : ''}`;
-        newColDOM.setAttribute('draggable', 'false'); // Left pane columns are statically positioned
+        newColDOM.setAttribute('draggable', 'false');
         newColDOM.setAttribute('data-column-group-id', newGroup.id);
         newColDOM.innerHTML = `
           <div class="column-header" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsedNew ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsedNew ? '0' : '10px'};">
@@ -1312,13 +1582,15 @@
           trackDOM.className = 'board-column-track';
           trackDOM.setAttribute('data-track-id', trackId);
 
-          // Get groups belonging to this track, sorted by position
-          const trackGroups = state.groups.filter(g => g.id !== 'new_gems' && g.columnId === trackId);
+          // Get root groups belonging to this track
+          const trackGroups = state.groups.filter(g => g.id !== 'new_gems' && !g.parentId && g.columnId === trackId);
           trackGroups.sort((a, b) => (a.position || 0) - (b.position || 0));
 
           trackGroups.forEach(group => {
-            const colGems = gems.filter(g => g.groupId === group.id);
+            const colDirectGems = gems.filter(g => g.groupId === group.id);
+            const totalCount = getGroupTotalGemCount(group.id);
             const isCollapsed = state.collapsedGroups && state.collapsedGroups[group.id];
+            const children = getGroupChildren(group.id);
 
             const colDOM = document.createElement('div');
             colDOM.className = `board-column ${isCollapsed ? 'collapsed-vertical' : ''}`;
@@ -1335,8 +1607,11 @@
                   <span style="font-weight: 600;">${escapeHTML(group.name)}</span>
                 </div>
                 <div class="column-header-actions">
-                  <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
+                  <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${totalCount}</span>
                   <div class="column-action-buttons">
+                    <button class="header-action-btn" onclick="event.stopPropagation(); openGroupModal(null, '${group.id}')" title="Adicionar Subgrupo">
+                      <i data-lucide="plus" style="width: 11px; height: 11px;"></i>
+                    </button>
                     <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${group.id}')" title="Editar Grupo">
                       <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
                     </button>
@@ -1346,9 +1621,43 @@
                   </div>
                 </div>
               </div>
-              <div class="column-cards" data-group-id="${group.id}" style="${isCollapsed ? 'display: none;' : ''}">
-                ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
-                ${colGems.map(gem => createCardHTML(gem)).join('')}
+              <div class="column-body-wrapper" style="${isCollapsed ? 'display: none;' : ''}">
+                <div class="column-cards" data-group-id="${group.id}">
+                  ${colDirectGems.length === 0 && children.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
+                  ${colDirectGems.map(gem => createCardHTML(gem)).join('')}
+                </div>
+                ${children.length > 0 ? `
+                  <div class="board-subgroups-container">
+                    ${children.map(subgroup => {
+                      const subGems = gems.filter(g => g.groupId === subgroup.id);
+                      const isSubCollapsed = state.collapsedGroups && state.collapsedGroups[subgroup.id];
+                      return `
+                        <div class="board-subgroup-box">
+                          <div class="board-subgroup-header ${isSubCollapsed ? 'collapsed-header' : ''}" onclick="toggleGroupCollapse('${subgroup.id}')">
+                            <div class="board-subgroup-title">
+                              <i data-lucide="${isSubCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 12px; height: 12px; color: var(--text-tertiary);"></i>
+                              <i data-lucide="${subgroup.icon || 'folder'}" style="width: 12px;"></i>
+                              <span>${escapeHTML(subgroup.name)}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                              <span style="font-size: 10px; color: var(--text-tertiary); background: var(--badge-bg); padding: 1px 5px; border-radius: 8px;">${subGems.length}</span>
+                              <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${subgroup.id}')" title="Editar Subgrupo">
+                                <i data-lucide="edit-2" style="width: 10px; height: 10px;"></i>
+                              </button>
+                              <button class="header-action-btn" onclick="event.stopPropagation(); deleteGroup('${subgroup.id}')" title="Eliminar Subgrupo">
+                                <i data-lucide="trash" style="width: 10px; height: 10px;"></i>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="board-subgroup-cards column-cards" data-group-id="${subgroup.id}" style="${isSubCollapsed ? 'display: none;' : ''}">
+                            ${subGems.length === 0 ? `<div style="font-size: 10.5px; color: var(--text-tertiary); text-align: center; padding: 6px 0;">Sem Gems neste subgrupo.</div>` : ''}
+                            ${subGems.map(gem => createCardHTML(gem)).join('')}
+                          </div>
+                        </div>
+                      `;
+                    }).join('')}
+                  </div>
+                ` : ''}
               </div>
             `;
             trackDOM.appendChild(colDOM);
@@ -1376,7 +1685,6 @@
 
       } else {
         // --- SINGLE CATEGORY VIEW ---
-        // Render just the active group (or active category folder)
         let activeGroup = state.groups.find(g => g.id === state.currentCategory);
         let colGems = [];
         let isSpecialFav = state.currentCategory === 'favorites';
@@ -1391,10 +1699,12 @@
         if (activeGroup) {
           const isCollapsed = state.collapsedGroups && state.collapsedGroups[activeGroup.id];
           const isNew = activeGroup.id === 'new_gems';
+          const children = isSpecialFav ? [] : getGroupChildren(activeGroup.id);
+          const totalCount = isSpecialFav ? colGems.length : getGroupTotalGemCount(activeGroup.id);
 
           const colDOM = document.createElement('div');
           colDOM.className = `board-column ${isNew ? 'is-new-column' : ''} ${isCollapsed ? 'collapsed-vertical' : ''}`;
-          colDOM.style.width = '320px'; // Give it a bit more width since it's alone
+          colDOM.style.width = '340px';
           
           colDOM.innerHTML = `
             <div class="column-header" style="display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 10px; border-bottom: ${isCollapsed ? 'none' : '1px solid var(--border-subtle)'}; margin-bottom: ${isCollapsed ? '0' : '10px'};">
@@ -1406,18 +1716,55 @@
                 <span style="font-weight: 600;">${escapeHTML(activeGroup.name)}</span>
               </div>
               <div class="column-header-actions">
-                <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${colGems.length}</span>
-                ${!isSpecialFav ? `
+                <span class="column-count" style="font-size: 11px; color: var(--text-tertiary); font-weight: 600; background: var(--badge-bg); padding: 2px 6px; border-radius: 10px;">${totalCount}</span>
+                ${!isSpecialFav && !isNew ? `
                 <div class="column-action-buttons">
+                  <button class="header-action-btn" onclick="event.stopPropagation(); openGroupModal(null, '${activeGroup.id}')" title="Adicionar Subgrupo">
+                    <i data-lucide="plus" style="width: 11px; height: 11px;"></i>
+                  </button>
                   <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${activeGroup.id}')" title="Editar Grupo">
                     <i data-lucide="edit-2" style="width: 11px; height: 11px;"></i>
                   </button>
                 </div>` : ''}
               </div>
             </div>
-            <div class="column-cards" data-group-id="${activeGroup.id}" style="${isCollapsed ? 'display: none;' : ''}">
-              ${colGems.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
-              ${colGems.map(gem => createCardHTML(gem)).join('')}
+            <div class="column-body-wrapper" style="${isCollapsed ? 'display: none;' : ''}">
+              <div class="column-cards" data-group-id="${activeGroup.id}">
+                ${colGems.length === 0 && children.length === 0 ? `<div style="font-size: 11px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Sem Gems aqui.</div>` : ''}
+                ${colGems.map(gem => createCardHTML(gem)).join('')}
+              </div>
+              ${children.length > 0 ? `
+                <div class="board-subgroups-container">
+                  ${children.map(subgroup => {
+                    const subGems = gems.filter(g => g.groupId === subgroup.id);
+                    const isSubCollapsed = state.collapsedGroups && state.collapsedGroups[subgroup.id];
+                    return `
+                      <div class="board-subgroup-box">
+                        <div class="board-subgroup-header ${isSubCollapsed ? 'collapsed-header' : ''}" onclick="toggleGroupCollapse('${subgroup.id}')">
+                          <div class="board-subgroup-title">
+                            <i data-lucide="${isSubCollapsed ? 'chevron-right' : 'chevron-down'}" style="width: 12px; height: 12px; color: var(--text-tertiary);"></i>
+                            <i data-lucide="${subgroup.icon || 'folder'}" style="width: 12px;"></i>
+                            <span>${escapeHTML(subgroup.name)}</span>
+                          </div>
+                          <div style="display: flex; align-items: center; gap: 4px;">
+                            <span style="font-size: 10px; color: var(--text-tertiary); background: var(--badge-bg); padding: 1px 5px; border-radius: 8px;">${subGems.length}</span>
+                            <button class="header-action-btn" onclick="event.stopPropagation(); editGroup('${subgroup.id}')" title="Editar Subgrupo">
+                              <i data-lucide="edit-2" style="width: 10px; height: 10px;"></i>
+                            </button>
+                            <button class="header-action-btn" onclick="event.stopPropagation(); deleteGroup('${subgroup.id}')" title="Eliminar Subgrupo">
+                              <i data-lucide="trash" style="width: 10px; height: 10px;"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="board-subgroup-cards column-cards" data-group-id="${subgroup.id}" style="${isSubCollapsed ? 'display: none;' : ''}">
+                          ${subGems.length === 0 ? `<div style="font-size: 10.5px; color: var(--text-tertiary); text-align: center; padding: 6px 0;">Sem Gems neste subgrupo.</div>` : ''}
+                          ${subGems.map(gem => createCardHTML(gem)).join('')}
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              ` : ''}
             </div>
           `;
           container.appendChild(colDOM);
@@ -1476,6 +1823,7 @@
         <tbody>
           ${gems.map(gem => {
             const group = state.groups.find(g => g.id === gem.groupId);
+            const hierarchyPath = getGroupHierarchyPath(gem.groupId);
             return `
               <tr>
                 <td style="font-size: 16px;">${gem.icon || '💎'}</td>
@@ -1483,7 +1831,12 @@
                   ${escapeHTML(gem.name)}
                   ${gem.groupId === 'new_gems' ? `<span class="new-badge" style="margin-left: 6px;">Novo</span>` : ''}
                 </td>
-                <td><span class="tag-badge">${escapeHTML(group ? group.name : 'Geral')}</span></td>
+                <td>
+                  <span class="group-path-badge">
+                    <i data-lucide="${group ? (group.icon || 'folder') : 'folder'}" style="width: 11px; height: 11px;"></i>
+                    ${escapeHTML(hierarchyPath || 'Geral')}
+                  </span>
+                </td>
                 <td style="color: var(--text-secondary); font-size: 12px;">${escapeHTML(gem.desc || '-')}</td>
                 <td style="text-align: right;">
                   <a href="${escapeHTML(gem.url)}" target="_blank" class="card-link-btn">Abrir</a>
@@ -1764,7 +2117,8 @@
               showToast(`"${gem.name}" marcado como favorito!`);
             } else {
               gem.groupId = targetGroupId;
-              showToast(`Gem organizado para "${state.groups.find(g => g.id === targetGroupId)?.name || 'Novos Gems'}"`);
+              const groupPath = getGroupHierarchyPath(targetGroupId) || 'Novos Gems';
+              showToast(`Gem organizado para "${groupPath}"`);
             }
             saveState();
             renderApp();
@@ -1900,18 +2254,24 @@
     function openGemModal(gemToEdit = null) {
       const modal = document.getElementById('gemModal');
       const form = document.getElementById('gemForm');
+      const groupSelect = document.getElementById('gemGroup');
+      
+      const selectedGroupId = gemToEdit ? gemToEdit.groupId : (state.currentCategory !== 'all' && state.currentCategory !== 'favorites' ? state.currentCategory : 'new_gems');
+      groupSelect.innerHTML = buildHierarchicalSelectOptions(selectedGroupId);
+
       if (gemToEdit) {
         document.getElementById('gemModalTitle').innerText = 'Editar Gem';
         document.getElementById('gemId').value = gemToEdit.id;
         document.getElementById('gemName').value = gemToEdit.name;
         document.getElementById('gemUrl').value = gemToEdit.url;
         document.getElementById('gemDesc').value = gemToEdit.desc || '';
-        document.getElementById('gemGroup').value = gemToEdit.groupId;
+        groupSelect.value = gemToEdit.groupId;
         document.getElementById('gemIcon').value = gemToEdit.icon || '🤖';
       } else {
         document.getElementById('gemModalTitle').innerText = 'Adicionar Gem';
         form.reset();
         document.getElementById('gemId').value = '';
+        groupSelect.value = selectedGroupId;
       }
       modal.classList.add('active');
     }
@@ -1952,23 +2312,29 @@
       showToast('Guardado com sucesso!');
     }
 
-    function openGroupModal(groupToEdit = null) {
+    function openGroupModal(groupToEdit = null, defaultParentId = null) {
       const modal = document.getElementById('groupModal');
       const title = modal.querySelector('.modal-title');
       const btn = modal.querySelector('button[type="submit"]');
+      const parentSelect = document.getElementById('groupParentInput');
+      
+      const parentIdToSelect = groupToEdit ? groupToEdit.parentId : (defaultParentId || '');
+      parentSelect.innerHTML = buildParentGroupOptions(parentIdToSelect || '', groupToEdit ? groupToEdit.id : null);
       
       if (groupToEdit) {
-        title.innerText = 'Editar Grupo';
+        title.innerText = groupToEdit.parentId ? 'Editar Subgrupo' : 'Editar Grupo';
         btn.innerText = 'Guardar Alterações';
         document.getElementById('groupIdInput').value = groupToEdit.id;
         document.getElementById('groupNameInput').value = groupToEdit.name;
         document.getElementById('groupIconInput').value = groupToEdit.icon || 'folder';
+        parentSelect.value = groupToEdit.parentId || '';
       } else {
-        title.innerText = 'Novo Grupo';
-        btn.innerText = 'Criar Grupo';
+        title.innerText = defaultParentId ? 'Novo Subgrupo' : 'Novo Grupo';
+        btn.innerText = defaultParentId ? 'Criar Subgrupo' : 'Criar Grupo';
         document.getElementById('groupIdInput').value = '';
         document.getElementById('groupNameInput').value = '';
         document.getElementById('groupIconInput').value = 'folder';
+        parentSelect.value = defaultParentId || '';
       }
       modal.classList.add('active');
     }
@@ -1982,17 +2348,35 @@
       const group = state.groups.find(g => g.id === groupId);
       if (!group) return;
 
-      if (confirm(`Eliminar o grupo "${group.name}"? Os Gems deste grupo serão movidos para "📥 Novos Gems".`)) {
+      const children = getGroupChildren(groupId);
+      const promptMsg = children.length > 0
+        ? `Eliminar o grupo "${group.name}" e todos os seus ${children.length} subgrupos? Os Gems serão movidos para "📥 Novos Gems".`
+        : `Eliminar o grupo "${group.name}"? Os Gems deste grupo serão movidos para "📥 Novos Gems".`;
+
+      if (confirm(promptMsg)) {
+        const allIdsToDelete = [groupId, ...getAllDescendantGroupIds(groupId)];
+        
+        // Move gems to new_gems
         state.gems.forEach(g => {
-          if (g.groupId === groupId) g.groupId = 'new_gems';
+          if (allIdsToDelete.includes(g.groupId)) g.groupId = 'new_gems';
         });
-        state.groups = state.groups.filter(g => g.id !== groupId);
-        if (state.currentCategory === groupId) {
-          state.currentCategory = 'all';
-        }
-        if (state.collapsedGroups && state.collapsedGroups[groupId]) {
-          delete state.collapsedGroups[groupId];
-        }
+
+        // Delete all groups in subtree
+        state.groups = state.groups.filter(g => !allIdsToDelete.includes(g.id));
+
+        // Clean collapse states and current category
+        allIdsToDelete.forEach(id => {
+          if (state.currentCategory === id) {
+            state.currentCategory = 'all';
+          }
+          if (state.collapsedGroups && state.collapsedGroups[id]) {
+            delete state.collapsedGroups[id];
+          }
+          if (state.collapsedTree && state.collapsedTree[id]) {
+            delete state.collapsedTree[id];
+          }
+        });
+
         saveState();
         renderApp();
         showToast('Grupo eliminado.');
@@ -2011,6 +2395,7 @@
       const id = document.getElementById('groupIdInput').value;
       const name = document.getElementById('groupNameInput').value.trim();
       const icon = document.getElementById('groupIconInput').value.trim() || 'folder';
+      const parentId = document.getElementById('groupParentInput').value || null;
 
       if (!name) return;
 
@@ -2019,9 +2404,36 @@
         if (idx !== -1) {
           state.groups[idx].name = name;
           state.groups[idx].icon = icon;
+          state.groups[idx].parentId = parentId;
+          // If changing from subgroup to root group, ensure columnId exists
+          if (!parentId && state.groups[idx].columnId === undefined) {
+            state.groups[idx].columnId = 1;
+            state.groups[idx].position = 99;
+          }
         }
       } else {
-        state.groups.push({ id: 'group_' + Date.now(), name, icon });
+        let columnId = undefined;
+        let position = undefined;
+
+        if (!parentId) {
+          // Find track with fewest root groups
+          const trackCounts = [1, 2, 3].map(t => ({
+            track: t,
+            count: state.groups.filter(g => g.id !== 'new_gems' && !g.parentId && g.columnId === t).length
+          }));
+          trackCounts.sort((a, b) => a.count - b.count);
+          columnId = trackCounts[0].track;
+          position = trackCounts[0].count;
+        }
+
+        const newId = 'group_' + Date.now();
+        state.groups.push({ id: newId, name, icon, parentId, columnId, position });
+
+        // Auto-expand tree parent if creating a subgroup
+        if (parentId) {
+          if (!state.collapsedTree) state.collapsedTree = {};
+          state.collapsedTree[parentId] = false;
+        }
       }
 
       saveState();
