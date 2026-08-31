@@ -912,6 +912,87 @@
       background: var(--bg-card);
     }
 
+    /* Visual Icon Picker */
+    .icon-picker-container {
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+    }
+
+    .selected-icon-preview {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-card);
+      border: 1.5px solid var(--accent);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .icon-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(34px, 1fr));
+      gap: 6px;
+      max-height: 160px;
+      overflow-y: auto;
+      padding: 6px;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+    }
+
+    .icon-option-btn {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.12s ease;
+      padding: 0;
+    }
+
+    .icon-option-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-color);
+    }
+
+    .icon-option-btn.active {
+      background: var(--accent-subtle);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .emoji-preset-btn {
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.1s ease;
+      padding: 0;
+    }
+
+    .emoji-preset-btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent);
+      transform: scale(1.1);
+    }
+
     textarea.form-control {
       resize: vertical;
       min-height: 70px;
@@ -1151,7 +1232,12 @@
         </div>
         <div class="form-group">
           <label class="form-label">Ícone / Emoji</label>
-          <input type="text" id="gemIcon" class="form-control" value="🤖">
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+            <input type="text" id="gemIcon" class="form-control" value="🤖" style="width: 54px; font-size: 18px; text-align: center; padding: 4px;">
+            <div style="display: flex; gap: 4px; flex-wrap: wrap;" id="gemEmojiPresets">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
           <button type="button" class="btn" onclick="closeModal('gemModal')">Cancelar</button>
@@ -1163,7 +1249,7 @@
 
   <!-- MODAL: ADD GROUP -->
   <div class="modal-overlay" id="groupModal">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width: 520px;">
       <div class="modal-header">
         <h3 class="modal-title">Novo Grupo</h3>
         <button class="btn-icon" onclick="closeModal('groupModal')"><i data-lucide="x" style="width: 16px;"></i></button>
@@ -1181,8 +1267,24 @@
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">Ícone Lucide</label>
-          <input type="text" id="groupIconInput" class="form-control" value="folder">
+          <label class="form-label">Escolher Ícone</label>
+          <input type="hidden" id="groupIconInput" value="folder">
+          
+          <div class="icon-picker-container">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+              <div class="selected-icon-preview" id="selectedIconPreview" title="Ícone Selecionado">
+                <i data-lucide="folder" style="width: 18px; height: 18px;"></i>
+              </div>
+              <div style="position: relative; flex-grow: 1;">
+                <input type="text" id="iconSearchInput" class="form-control" style="font-size: 12px; padding: 6px 8px 6px 28px;" placeholder="Pesquisar ícones (ex: code, book, music)..." oninput="filterIconPicker()">
+                <i data-lucide="search" style="position: absolute; left: 8px; top: 8px; width: 13px; height: 13px; color: var(--text-tertiary);"></i>
+              </div>
+            </div>
+            
+            <div class="icon-picker-grid" id="iconPickerGrid">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
           <button type="button" class="btn" onclick="closeModal('groupModal')">Cancelar</button>
@@ -2251,6 +2353,75 @@
       }
     }
 
+    // --- VISUAL ICON PICKER & EMOJI PRESETS ---
+    const AVAILABLE_LUCIDE_ICONS = [
+      'folder', 'folder-open', 'folder-git', 'folder-archive', 'archive', 'bookmark', 'tag', 'layers', 'grid', 'layout', 'box', 'package',
+      'code', 'terminal', 'cpu', 'database', 'server', 'globe', 'laptop', 'smartphone', 'wifi', 'shield', 'key', 'git-branch', 'command',
+      'briefcase', 'calendar', 'check-square', 'clock', 'zap', 'target', 'trending-up', 'award', 'compass', 'flag', 'kanban', 'table', 'bar-chart-2',
+      'pen-tool', 'palette', 'image', 'video', 'music', 'camera', 'film', 'mic', 'sparkles', 'feather', 'headphones', 'play', 'wand-2',
+      'book', 'book-open', 'file-text', 'edit-3', 'paperclip', 'hash', 'at-sign', 'help-circle', 'message-square', 'mail', 'send',
+      'flask-conical', 'atom', 'brain', 'bot', 'lightbulb', 'wrench', 'settings', 'tool', 'star', 'heart', 'coffee', 'gift', 'smile', 'sun'
+    ];
+
+    const GEM_EMOJI_PRESETS = ['💎', '🤖', '💻', '📝', '⚡', '🎨', '📚', '🎬', '🚀', '💡', '🌍', '🔍', '📊', '🛠️', '🎓', '🧠', '💼', '🎯', '✨', '🔥'];
+
+    function renderIconPickerGrid(selectedIcon = 'folder', filterQuery = '') {
+      const grid = document.getElementById('iconPickerGrid');
+      if (!grid) return;
+
+      const filteredIcons = AVAILABLE_LUCIDE_ICONS.filter(icon => {
+        if (!filterQuery) return true;
+        return icon.toLowerCase().includes(filterQuery);
+      });
+
+      if (filteredIcons.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1 / -1; font-size: 11.5px; color: var(--text-tertiary); text-align: center; padding: 12px 0;">Nenhum ícone encontrado para "${escapeHTML(filterQuery)}".</div>`;
+        return;
+      }
+
+      grid.innerHTML = filteredIcons.map(icon => `
+        <button type="button" class="icon-option-btn ${icon === selectedIcon ? 'active' : ''}" 
+                onclick="selectLucideIcon('${icon}')" 
+                title="${icon}" 
+                data-icon-name="${icon}">
+          <i data-lucide="${icon}" style="width: 16px; height: 16px;"></i>
+        </button>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function selectLucideIcon(iconName) {
+      document.getElementById('groupIconInput').value = iconName;
+      const preview = document.getElementById('selectedIconPreview');
+      if (preview) {
+        preview.innerHTML = `<i data-lucide="${iconName}" style="width: 18px; height: 18px;"></i>`;
+        lucide.createIcons();
+      }
+
+      document.querySelectorAll('.icon-option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.iconName === iconName);
+      });
+    }
+
+    function filterIconPicker() {
+      const q = document.getElementById('iconSearchInput').value.toLowerCase().trim();
+      const current = document.getElementById('groupIconInput').value || 'folder';
+      renderIconPickerGrid(current, q);
+    }
+
+    function renderGemEmojiPresets() {
+      const container = document.getElementById('gemEmojiPresets');
+      if (!container) return;
+      container.innerHTML = GEM_EMOJI_PRESETS.map(emoji => `
+        <button type="button" class="emoji-preset-btn" onclick="selectGemEmoji('${emoji}')" title="Escolher ${emoji}">${emoji}</button>
+      `).join('');
+    }
+
+    function selectGemEmoji(emoji) {
+      document.getElementById('gemIcon').value = emoji;
+    }
+
     function openGemModal(gemToEdit = null) {
       const modal = document.getElementById('gemModal');
       const form = document.getElementById('gemForm');
@@ -2258,6 +2429,7 @@
       
       const selectedGroupId = gemToEdit ? gemToEdit.groupId : (state.currentCategory !== 'all' && state.currentCategory !== 'favorites' ? state.currentCategory : 'new_gems');
       groupSelect.innerHTML = buildHierarchicalSelectOptions(selectedGroupId);
+      renderGemEmojiPresets();
 
       if (gemToEdit) {
         document.getElementById('gemModalTitle').innerText = 'Editar Gem';
@@ -2321,19 +2493,22 @@
       const parentIdToSelect = groupToEdit ? groupToEdit.parentId : (defaultParentId || '');
       parentSelect.innerHTML = buildParentGroupOptions(parentIdToSelect || '', groupToEdit ? groupToEdit.id : null);
       
+      const activeIcon = groupToEdit ? (groupToEdit.icon || 'folder') : 'folder';
+      document.getElementById('iconSearchInput').value = '';
+      selectLucideIcon(activeIcon);
+      renderIconPickerGrid(activeIcon);
+
       if (groupToEdit) {
         title.innerText = groupToEdit.parentId ? 'Editar Subgrupo' : 'Editar Grupo';
         btn.innerText = 'Guardar Alterações';
         document.getElementById('groupIdInput').value = groupToEdit.id;
         document.getElementById('groupNameInput').value = groupToEdit.name;
-        document.getElementById('groupIconInput').value = groupToEdit.icon || 'folder';
         parentSelect.value = groupToEdit.parentId || '';
       } else {
         title.innerText = defaultParentId ? 'Novo Subgrupo' : 'Novo Grupo';
         btn.innerText = defaultParentId ? 'Criar Subgrupo' : 'Criar Grupo';
         document.getElementById('groupIdInput').value = '';
         document.getElementById('groupNameInput').value = '';
-        document.getElementById('groupIconInput').value = 'folder';
         parentSelect.value = defaultParentId || '';
       }
       modal.classList.add('active');
